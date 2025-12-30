@@ -33,7 +33,7 @@ func main() {
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:4200", "https://raijai.sutthiporn.dev"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowHeaders:     []string{"*"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 	}))
