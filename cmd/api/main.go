@@ -13,7 +13,8 @@ import (
 // @title RaiJai API
 // @version 1.0
 // @description RESTful API for RaiJai Application
-// @host localhost:8080
+// @host raijai-api.sutthiporn.dev
+// @schemes https
 // @BasePath /api/v1
 func main() {
 	// Load configuration and connect to database

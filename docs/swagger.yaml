@@ -198,7 +198,7 @@ definitions:
     - WalletTypeCash
     - WalletTypeBank
     - WalletTypeCreditCard
-host: localhost:8080
+host: raijai-api.sutthiporn.dev
 info:
   contact: {}
   description: RESTful API for RaiJai Application
@@ -653,4 +653,6 @@ paths:
       summary: Update a wallet
       tags:
       - wallets
+schemes:
+- https
 swagger: "2.0"

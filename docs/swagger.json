@@ -1,4 +1,7 @@
 {
+    "schemes": [
+        "https"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "RESTful API for RaiJai Application",
@@ -6,7 +9,7 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:8080",
+    "host": "raijai-api.sutthiporn.dev",
     "basePath": "/api/v1",
     "paths": {
         "/auth/me": {
