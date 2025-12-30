@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"time"
 )
@@ -35,7 +36,7 @@ func (d DateOnly) MarshalJSON() ([]byte, error) {
 }
 
 // Value implements the driver Valuer interface.
-func (d DateOnly) Value() (interface{}, error) {
+func (d DateOnly) Value() (driver.Value, error) {
 	return d.Time, nil
 }
 

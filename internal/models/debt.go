@@ -18,7 +18,7 @@ type InstallmentPlan struct {
 	PaidMonths    int       `json:"paidMonths"`
 	InterestRate  float64   `json:"interestRate"`
 	MonthlyAmount float64   `json:"monthlyAmount"`
-	StartDate     DateOnly  `json:"startDate"`
+	StartDate     DateOnly  `gorm:"type:date" json:"startDate"`
 }
 
 type Debt struct {
@@ -28,7 +28,7 @@ type Debt struct {
 	RemainingAmount float64          `json:"remainingAmount"`
 	Type            DebtType         `json:"type"`
 	PersonName      string           `json:"personName"`
-	DueDate         DateOnly         `json:"dueDate"`
+	DueDate         DateOnly         `gorm:"type:date" json:"dueDate"`
 	WalletID        *string          `json:"walletId"`
 	Wallet          *Wallet          `gorm:"foreignKey:WalletID" json:"wallet"`
 	IsInstallment   bool             `json:"isInstallment"`
