@@ -5,6 +5,7 @@ import (
 	"raijai-backend/internal/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -31,6 +32,8 @@ func (h *DebtHandler) CreateDebt(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	debt.ID = uuid.New().String()
 
 	if result := h.db.Create(&debt); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})

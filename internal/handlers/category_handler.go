@@ -5,6 +5,7 @@ import (
 	"raijai-backend/internal/models"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -25,12 +26,15 @@ func NewCategoryHandler(db *gorm.DB) *CategoryHandler {
 // @Param category body models.Category true "Category Data"
 // @Success 201 {object} models.Category
 // @Router /categories [post]
+// @Router /categories [post]
 func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 	var category models.Category
 	if err := c.ShouldBindJSON(&category); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	category.ID = uuid.New().String()
 
 	if result := h.db.Create(&category); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
