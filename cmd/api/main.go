@@ -6,6 +6,7 @@ import (
 	"raijai-backend/internal/models"
 	"raijai-backend/internal/routes"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,6 +27,15 @@ func main() {
 
 	// Initialize Gin router
 	r := gin.Default()
+
+	// CORS Configuration
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:4200", "https://raijai.sutthiporn.dev"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
 
 	// Setup routes
 	routes.SetupRoutes(r, db, cfg)
