@@ -30,7 +30,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	{
 		// Auth Middleware Group
 		protected := api.Group("/")
-		protected.Use(middleware.AuthMiddleware(cfg.KeycloakIssuer, cfg.KeycloakClientID))
+		protected.Use(middleware.AuthMiddleware(cfg.KeycloakIssuer, cfg.KeycloakClientID, db))
 		{
 			// Auth / Profile
 			protected.GET("/auth/me", userHandler.GetMe)

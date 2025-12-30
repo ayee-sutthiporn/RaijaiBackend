@@ -35,6 +35,11 @@ func (h *WalletHandler) CreateWallet(c *gin.Context) {
 
 	wallet.ID = uuid.New().String()
 
+	// Set owner from auth token
+	if userID, exists := c.Get("user_id"); exists {
+		wallet.OwnerID = userID.(string)
+	}
+
 	if result := h.db.Create(&wallet); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
