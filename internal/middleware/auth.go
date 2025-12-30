@@ -32,7 +32,7 @@ func AuthMiddleware(issuerURL, clientID string) gin.HandlerFunc {
 			return
 		}
 
-		verifier := provider.Verifier(&oidc.Config{ClientID: clientID})
+		verifier := provider.Verifier(&oidc.Config{SkipClientIDCheck: true})
 		idToken, err := verifier.Verify(context.Background(), tokenString)
 		if err != nil {
 			c.AbortWithStatusJSON(401, gin.H{"error": "Invalid token: " + err.Error()})
