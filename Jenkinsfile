@@ -31,7 +31,7 @@ pipeline {
                         string(credentialsId: 'PG_DB_PASSWORD', variable: 'PG_DB_PASSWORD'),
                         string(credentialsId: 'DB_PG_RAIJAI_DB_NAME', variable: 'DB_PG_RAIJAI_DB_NAME'),
                         string(credentialsId: 'KEYCLOAK_ISSUER', variable: 'KEYCLOAK_ISSUER'),
-                        string(credentialsId: 'KEYCLOAK_CLIENT_ID', variable: 'KEYCLOAK_CLIENT_ID')
+                        string(credentialsId: 'KEYCLOAK_CLIENT_ID', variable: 'KEYCLOAK_RAIJAI_CLIENT_ID')
                     ]) {
                         // Deploy using docker-compose
                         sh 'docker compose up -d --build'
