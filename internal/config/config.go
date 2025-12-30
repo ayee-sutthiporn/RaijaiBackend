@@ -13,7 +13,7 @@ type Config struct {
 	DBHost           string `mapstructure:"PG_DB_HOST"`
 	DBUser           string `mapstructure:"PG_DB_USER"`
 	DBPassword       string `mapstructure:"PG_DB_PASSWORD"`
-	DBName           string `mapstructure:"PG_AYEE_PORTAL_DB_NAME"`
+	DBName           string `mapstructure:"DB_PG_RAIJAI_DB_NAME"`
 	DBPort           string `mapstructure:"PG_DB_PORT"`
 	KeycloakIssuer   string `mapstructure:"KEYCLOAK_ISSUER"`
 	KeycloakClientID string `mapstructure:"KEYCLOAK_CLIENT_ID"`
@@ -31,7 +31,7 @@ func LoadConfig() *Config {
 		DBHost:           viper.GetString("PG_DB_HOST"),
 		DBUser:           viper.GetString("PG_DB_USER"),
 		DBPassword:       viper.GetString("PG_DB_PASSWORD"),
-		DBName:           viper.GetString("PG_AYEE_PORTAL_DB_NAME"),
+		DBName:           viper.GetString("DB_PG_RAIJAI_DB_NAME"),
 		DBPort:           viper.GetString("PG_DB_PORT"),
 		KeycloakIssuer:   viper.GetString("KEYCLOAK_ISSUER"),
 		KeycloakClientID: viper.GetString("KEYCLOAK_CLIENT_ID"),
