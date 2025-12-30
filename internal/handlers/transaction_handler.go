@@ -64,3 +64,49 @@ func (h *TransactionHandler) GetTransactions(c *gin.Context) {
 
 	c.JSON(http.StatusOK, transactions)
 }
+
+// UpdateTransaction godoc
+// @Summary Update a transaction
+// @Description Update a transaction by ID
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Param id path string true "Transaction ID"
+// @Param transaction body models.Transaction true "Transaction Data"
+// @Success 200 {object} models.Transaction
+// @Router /transactions/{id} [put]
+func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
+	id := c.Param("id")
+	var transaction models.Transaction
+
+	if result := h.db.First(&transaction, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&transaction); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	h.db.Save(&transaction)
+	c.JSON(http.StatusOK, transaction)
+}
+
+// DeleteTransaction godoc
+// @Summary Delete a transaction
+// @Description Delete a transaction by ID
+// @Tags transactions
+// @Produce json
+// @Param id path string true "Transaction ID"
+// @Success 200 {object} map[string]string
+// @Router /transactions/{id} [delete]
+func (h *TransactionHandler) DeleteTransaction(c *gin.Context) {
+	id := c.Param("id")
+	if result := h.db.Delete(&models.Transaction{}, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Transaction deleted successfully"})
+}

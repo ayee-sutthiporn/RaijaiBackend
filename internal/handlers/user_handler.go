@@ -59,3 +59,27 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+// GetMe godoc
+// @Summary Get current user profile
+// @Description Get profile of the currently logged-in user
+// @Tags auth
+// @Produce json
+// @Success 200 {object} models.User
+// @Router /auth/me [get]
+func (h *UserHandler) GetMe(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var user models.User
+	if result := h.db.First(&user, "id = ?", userID); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+

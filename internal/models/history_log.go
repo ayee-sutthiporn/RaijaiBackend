@@ -16,12 +16,12 @@ const (
 
 type HistoryLog struct {
 	ID            string          `gorm:"primaryKey" json:"id"`
-	EntityID      string          `json:"entity_id"`
-	EntityType    string          `json:"entity_type"`
+	EntityID      string          `json:"entityId"`
+	EntityType    string          `json:"entityType"`
 	Action        ActionType      `json:"action"`
 	Details       string          `json:"details"`
 	Changes       json.RawMessage `gorm:"type:jsonb" json:"changes" swaggertype:"string"`
-	PreviousValue json.RawMessage `gorm:"type:jsonb" json:"previous_value" swaggertype:"string"`
-	NewValue      json.RawMessage `gorm:"type:jsonb" json:"new_value" swaggertype:"string"`
+	PreviousValue json.RawMessage `gorm:"type:jsonb" json:"previousValue" swaggertype:"string"`
+	NewValue      json.RawMessage `gorm:"type:jsonb" json:"newValue" swaggertype:"string"`
 	Timestamp     time.Time       `json:"timestamp"`
 }

@@ -56,3 +56,49 @@ func (h *CategoryHandler) GetCategories(c *gin.Context) {
 
 	c.JSON(http.StatusOK, categories)
 }
+
+// UpdateCategory godoc
+// @Summary Update a category
+// @Description Update a category by ID
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Param id path string true "Category ID"
+// @Param category body models.Category true "Category Data"
+// @Success 200 {object} models.Category
+// @Router /categories/{id} [put]
+func (h *CategoryHandler) UpdateCategory(c *gin.Context) {
+	id := c.Param("id")
+	var category models.Category
+
+	if result := h.db.First(&category, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&category); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	h.db.Save(&category)
+	c.JSON(http.StatusOK, category)
+}
+
+// DeleteCategory godoc
+// @Summary Delete a category
+// @Description Delete a category by ID
+// @Tags categories
+// @Produce json
+// @Param id path string true "Category ID"
+// @Success 200 {object} map[string]string
+// @Router /categories/{id} [delete]
+func (h *CategoryHandler) DeleteCategory(c *gin.Context) {
+	id := c.Param("id")
+	if result := h.db.Delete(&models.Category{}, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Category deleted successfully"})
+}

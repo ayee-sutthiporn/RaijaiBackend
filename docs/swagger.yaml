@@ -1,5 +1,10 @@
 basePath: /api/v1
 definitions:
+  handlers.PaymentRequest:
+    properties:
+      amount:
+        type: number
+    type: object
   models.ActionType:
     enum:
     - CREATE
@@ -16,7 +21,7 @@ definitions:
     properties:
       color:
         type: string
-      created_at:
+      createdAt:
         type: string
       icon:
         type: string
@@ -36,6 +41,35 @@ definitions:
     - CategoryTypeIncome
     - CategoryTypeExpense
   models.Debt:
+    properties:
+      autoDeduct:
+        type: boolean
+      createdAt:
+        type: string
+      dueDate:
+        type: string
+      id:
+        type: string
+      installmentPlan:
+        $ref: '#/definitions/models.InstallmentPlan'
+      isInstallment:
+        type: boolean
+      personName:
+        type: string
+      remainingAmount:
+        type: number
+      remark:
+        type: string
+      title:
+        type: string
+      totalAmount:
+        type: number
+      type:
+        $ref: '#/definitions/models.DebtType'
+      wallet:
+        $ref: '#/definitions/models.Wallet'
+      walletId:
+        type: string
     type: object
   models.DebtType:
     enum:
@@ -53,31 +87,45 @@ definitions:
         type: string
       details:
         type: string
-      entity_id:
+      entityId:
         type: string
-      entity_type:
+      entityType:
         type: string
       id:
         type: string
-      new_value:
+      newValue:
         type: string
-      previous_value:
+      previousValue:
         type: string
       timestamp:
         type: string
+    type: object
+  models.InstallmentPlan:
+    properties:
+      interestRate:
+        type: number
+      monthlyAmount:
+        type: number
+      paidMonths:
+        type: integer
+      startDate:
+        type: string
+      totalMonths:
+        type: integer
     type: object
   models.Transaction:
     properties:
       amount:
         type: number
       category:
-        description: Assuming Name or ID stored as string
+        $ref: '#/definitions/models.Category'
+      categoryId:
         type: string
-      created_at:
+      createdAt:
         type: string
-      created_by:
+      createdBy:
         $ref: '#/definitions/models.User'
-      created_by_id:
+      createdById:
         type: string
       date:
         type: string
@@ -85,16 +133,15 @@ definitions:
         type: string
       id:
         type: string
-      to_wallet:
+      toWallet:
         $ref: '#/definitions/models.Wallet'
-      to_wallet_id:
-        description: Pointer for nullable
+      toWalletId:
         type: string
       type:
         $ref: '#/definitions/models.TransactionType'
       wallet:
         $ref: '#/definitions/models.Wallet'
-      wallet_id:
+      walletId:
         type: string
     type: object
   models.TransactionType:
@@ -109,9 +156,9 @@ definitions:
     - TransactionTypeTransfer
   models.User:
     properties:
-      avatar_url:
+      avatarUrl:
         type: string
-      created_at:
+      createdAt:
         type: string
       email:
         type: string
@@ -126,7 +173,7 @@ definitions:
         type: number
       color:
         type: string
-      created_at:
+      createdAt:
         type: string
       currency:
         type: string
@@ -136,7 +183,7 @@ definitions:
         type: string
       owner:
         $ref: '#/definitions/models.User'
-      owner_id:
+      ownerId:
         type: string
       type:
         $ref: '#/definitions/models.WalletType'
@@ -158,6 +205,19 @@ info:
   title: RaiJai API
   version: "1.0"
 paths:
+  /auth/me:
+    get:
+      description: Get profile of the currently logged-in user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: Get current user profile
+      tags:
+      - auth
   /categories:
     get:
       description: Get all categories
@@ -194,6 +254,53 @@ paths:
       summary: Create a new category
       tags:
       - categories
+  /categories/{id}:
+    delete:
+      description: Delete a category by ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a category
+      tags:
+      - categories
+    put:
+      consumes:
+      - application/json
+      description: Update a category by ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Category Data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/models.Category'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Category'
+      summary: Update a category
+      tags:
+      - categories
   /debts:
     get:
       description: Get all debts
@@ -228,6 +335,80 @@ paths:
           schema:
             $ref: '#/definitions/models.Debt'
       summary: Create a new debt record
+      tags:
+      - debts
+  /debts/{id}:
+    delete:
+      description: Delete a debt by ID
+      parameters:
+      - description: Debt ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a debt
+      tags:
+      - debts
+    put:
+      consumes:
+      - application/json
+      description: Update a debt by ID
+      parameters:
+      - description: Debt ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Debt Data
+        in: body
+        name: debt
+        required: true
+        schema:
+          $ref: '#/definitions/models.Debt'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Debt'
+      summary: Update a debt
+      tags:
+      - debts
+  /debts/{id}/payment:
+    post:
+      consumes:
+      - application/json
+      description: Deduct amount from debt
+      parameters:
+      - description: Debt ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payment Amount
+        in: body
+        name: payment
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.PaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Debt'
+      summary: Make a payment for a debt
       tags:
       - debts
   /history:
@@ -293,6 +474,53 @@ paths:
           schema:
             $ref: '#/definitions/models.Transaction'
       summary: Create a new transaction
+      tags:
+      - transactions
+  /transactions/{id}:
+    delete:
+      description: Delete a transaction by ID
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a transaction
+      tags:
+      - transactions
+    put:
+      consumes:
+      - application/json
+      description: Update a transaction by ID
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Transaction Data
+        in: body
+        name: transaction
+        required: true
+        schema:
+          $ref: '#/definitions/models.Transaction'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Transaction'
+      summary: Update a transaction
       tags:
       - transactions
   /users:
@@ -376,6 +604,53 @@ paths:
           schema:
             $ref: '#/definitions/models.Wallet'
       summary: Create a new wallet
+      tags:
+      - wallets
+  /wallets/{id}:
+    delete:
+      description: Delete a wallet by ID
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a wallet
+      tags:
+      - wallets
+    put:
+      consumes:
+      - application/json
+      description: Update a wallet by ID
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Wallet Data
+        in: body
+        name: wallet
+        required: true
+        schema:
+          $ref: '#/definitions/models.Wallet'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Wallet'
+      summary: Update a wallet
       tags:
       - wallets
 swagger: "2.0"

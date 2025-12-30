@@ -64,3 +64,49 @@ func (h *WalletHandler) GetWallets(c *gin.Context) {
 
 	c.JSON(http.StatusOK, wallets)
 }
+
+// UpdateWallet godoc
+// @Summary Update a wallet
+// @Description Update a wallet by ID
+// @Tags wallets
+// @Accept json
+// @Produce json
+// @Param id path string true "Wallet ID"
+// @Param wallet body models.Wallet true "Wallet Data"
+// @Success 200 {object} models.Wallet
+// @Router /wallets/{id} [put]
+func (h *WalletHandler) UpdateWallet(c *gin.Context) {
+	id := c.Param("id")
+	var wallet models.Wallet
+
+	if result := h.db.First(&wallet, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Wallet not found"})
+		return
+	}
+
+	if err := c.ShouldBindJSON(&wallet); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	h.db.Save(&wallet)
+	c.JSON(http.StatusOK, wallet)
+}
+
+// DeleteWallet godoc
+// @Summary Delete a wallet
+// @Description Delete a wallet by ID
+// @Tags wallets
+// @Produce json
+// @Param id path string true "Wallet ID"
+// @Success 200 {object} map[string]string
+// @Router /wallets/{id} [delete]
+func (h *WalletHandler) DeleteWallet(c *gin.Context) {
+	id := c.Param("id")
+	if result := h.db.Delete(&models.Wallet{}, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Wallet deleted successfully"})
+}

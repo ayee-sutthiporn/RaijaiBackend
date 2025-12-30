@@ -8,8 +8,8 @@ type User struct {
 	ID        string    `gorm:"primaryKey" json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `gorm:"uniqueIndex" json:"email"`
-	AvatarURL string    `json:"avatar_url"`
-	CreatedAt time.Time `json:"created_at"`
+	AvatarURL string    `json:"avatarUrl"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type CategoryType string
@@ -25,7 +25,7 @@ type Category struct {
 	Type      CategoryType `json:"type"`
 	Color     string       `json:"color"`
 	Icon      string       `json:"icon"`
-	CreatedAt time.Time    `json:"created_at"`
+	CreatedAt time.Time    `json:"createdAt"`
 }
 
 type WalletType string
@@ -43,7 +43,7 @@ type Wallet struct {
 	Balance   float64    `json:"balance"`
 	Currency  string     `json:"currency"`
 	Color     string     `json:"color"`
-	OwnerID   string     `json:"owner_id"`
+	OwnerID   string     `json:"ownerId"`
 	Owner     User       `gorm:"foreignKey:OwnerID" json:"owner"`
-	CreatedAt time.Time  `json:"created_at"`
+	CreatedAt time.Time  `json:"createdAt"`
 }

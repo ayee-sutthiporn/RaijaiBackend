@@ -15,6 +15,26 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/me": {
+            "get": {
+                "description": "Get profile of the currently logged-in user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get current user profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
+        },
         "/categories": {
             "get": {
                 "description": "Get all categories",
@@ -70,6 +90,77 @@ const docTemplate = `{
                 }
             }
         },
+        "/categories/{id}": {
+            "put": {
+                "description": "Update a category by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Update a category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Category Data",
+                        "name": "category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Category"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Category"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a category by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "categories"
+                ],
+                "summary": "Delete a category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/debts": {
             "get": {
                 "description": "Get all debts",
@@ -118,6 +209,118 @@ const docTemplate = `{
                 "responses": {
                     "201": {
                         "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Debt"
+                        }
+                    }
+                }
+            }
+        },
+        "/debts/{id}": {
+            "put": {
+                "description": "Update a debt by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "debts"
+                ],
+                "summary": "Update a debt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Debt ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Debt Data",
+                        "name": "debt",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Debt"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Debt"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a debt by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "debts"
+                ],
+                "summary": "Delete a debt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Debt ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/debts/{id}/payment": {
+            "post": {
+                "description": "Deduct amount from debt",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "debts"
+                ],
+                "summary": "Make a payment for a debt",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Debt ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Payment Amount",
+                        "name": "payment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.PaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/models.Debt"
                         }
@@ -220,6 +423,77 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/models.Transaction"
+                        }
+                    }
+                }
+            }
+        },
+        "/transactions/{id}": {
+            "put": {
+                "description": "Update a transaction by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Update a transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Transaction Data",
+                        "name": "transaction",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Transaction"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Transaction"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a transaction by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Delete a transaction",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -351,9 +625,88 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/wallets/{id}": {
+            "put": {
+                "description": "Update a wallet by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "Update a wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Wallet Data",
+                        "name": "wallet",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Wallet"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Wallet"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a wallet by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "Delete a wallet",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "handlers.PaymentRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                }
+            }
+        },
         "models.ActionType": {
             "type": "string",
             "enum": [
@@ -375,7 +728,7 @@ const docTemplate = `{
                 "color": {
                     "type": "string"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "icon": {
@@ -404,7 +757,51 @@ const docTemplate = `{
             ]
         },
         "models.Debt": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "autoDeduct": {
+                    "type": "boolean"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "dueDate": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "installmentPlan": {
+                    "$ref": "#/definitions/models.InstallmentPlan"
+                },
+                "isInstallment": {
+                    "type": "boolean"
+                },
+                "personName": {
+                    "type": "string"
+                },
+                "remainingAmount": {
+                    "type": "number"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "totalAmount": {
+                    "type": "number"
+                },
+                "type": {
+                    "$ref": "#/definitions/models.DebtType"
+                },
+                "wallet": {
+                    "$ref": "#/definitions/models.Wallet"
+                },
+                "walletId": {
+                    "type": "string"
+                }
+            }
         },
         "models.DebtType": {
             "type": "string",
@@ -429,23 +826,43 @@ const docTemplate = `{
                 "details": {
                     "type": "string"
                 },
-                "entity_id": {
+                "entityId": {
                     "type": "string"
                 },
-                "entity_type": {
+                "entityType": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "new_value": {
+                "newValue": {
                     "type": "string"
                 },
-                "previous_value": {
+                "previousValue": {
                     "type": "string"
                 },
                 "timestamp": {
                     "type": "string"
+                }
+            }
+        },
+        "models.InstallmentPlan": {
+            "type": "object",
+            "properties": {
+                "interestRate": {
+                    "type": "number"
+                },
+                "monthlyAmount": {
+                    "type": "number"
+                },
+                "paidMonths": {
+                    "type": "integer"
+                },
+                "startDate": {
+                    "type": "string"
+                },
+                "totalMonths": {
+                    "type": "integer"
                 }
             }
         },
@@ -456,16 +873,18 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "category": {
-                    "description": "Assuming Name or ID stored as string",
+                    "$ref": "#/definitions/models.Category"
+                },
+                "categoryId": {
                     "type": "string"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
-                "created_by": {
+                "createdBy": {
                     "$ref": "#/definitions/models.User"
                 },
-                "created_by_id": {
+                "createdById": {
                     "type": "string"
                 },
                 "date": {
@@ -477,11 +896,10 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "to_wallet": {
+                "toWallet": {
                     "$ref": "#/definitions/models.Wallet"
                 },
-                "to_wallet_id": {
-                    "description": "Pointer for nullable",
+                "toWalletId": {
                     "type": "string"
                 },
                 "type": {
@@ -490,7 +908,7 @@ const docTemplate = `{
                 "wallet": {
                     "$ref": "#/definitions/models.Wallet"
                 },
-                "wallet_id": {
+                "walletId": {
                     "type": "string"
                 }
             }
@@ -511,10 +929,10 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
-                "avatar_url": {
+                "avatarUrl": {
                     "type": "string"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "email": {
@@ -537,7 +955,7 @@ const docTemplate = `{
                 "color": {
                     "type": "string"
                 },
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "currency": {
@@ -552,7 +970,7 @@ const docTemplate = `{
                 "owner": {
                     "$ref": "#/definitions/models.User"
                 },
-                "owner_id": {
+                "ownerId": {
                     "type": "string"
                 },
                 "type": {
