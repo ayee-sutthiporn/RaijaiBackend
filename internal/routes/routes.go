@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"raijai-backend/internal/config"
 	"raijai-backend/internal/handlers"
 	"raijai-backend/internal/middleware"
 
@@ -11,8 +12,8 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 )
-
-func SetupRoutes(r *gin.Engine, db *gorm.DB) {
+ 
+func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	// Initialize handlers
 	userHandler := handlers.NewUserHandler(db)
 	categoryHandler := handlers.NewCategoryHandler(db)
@@ -20,17 +21,16 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	transactionHandler := handlers.NewTransactionHandler(db)
 	debtHandler := handlers.NewDebtHandler(db)
 	historyHandler := handlers.NewHistoryLogHandler(db)
-
+ 
 	// Swagger Route
 	// IMPORTANT: Run 'swag init -g cmd/api/main.go' to generate docs, then uncomment the import above
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
+ 
 	api := r.Group("/api/v1")
 	{
 		// Auth Middleware Group
-		// Note: Replace with config values in production
 		protected := api.Group("/")
-		protected.Use(middleware.AuthMiddleware("http://localhost:8080/realms/raijai-realm", "raijai-backend"))
+		protected.Use(middleware.AuthMiddleware(cfg.KeycloakIssuer, cfg.KeycloakClientID))
 		{
 			// Auth / Profile
 			protected.GET("/auth/me", userHandler.GetMe)

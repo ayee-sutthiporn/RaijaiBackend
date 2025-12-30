@@ -1,0 +1,14 @@
+services:
+  backend:
+    build: .
+    container_name: raijai-backend
+    ports:
+      - "${RAIJAI_BACKEND_PORT:-8088}:8088"
+    environment:
+      - PG_DB_HOST=${PG_DB_HOST}
+      - PG_DB_PORT=${PG_DB_PORT}
+      - PG_DB_USER=${PG_DB_USER}
+      - PG_DB_PASSWORD=${PG_DB_PASSWORD}
+      - DB_PG_RAIJAI_DB_NAME=${DB_PG_RAIJAI_DB_NAME}
+      - RAIJAI_BACKEND_PORT=${RAIJAI_BACKEND_PORT:-8088}
+    restart: always

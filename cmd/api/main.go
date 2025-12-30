@@ -28,7 +28,7 @@ func main() {
 	r := gin.Default()
 
 	// Setup routes
-	routes.SetupRoutes(r, db)
+	routes.SetupRoutes(r, db, cfg)
 
 	// Start server
 	log.Println("Server starting on port 8080...")
