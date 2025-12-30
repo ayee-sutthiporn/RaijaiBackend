@@ -3,7 +3,7 @@ services:
     build: .
     container_name: raijai-backend
     ports:
-      - "${RAIJAI_BACKEND_PORT:-8088}:8088"
+      - "${RAIJAI_BACKEND_PORT:-8088}:8080"
     environment:
       - PG_DB_HOST=${PG_DB_HOST}
       - PG_DB_PORT=${PG_DB_PORT}
