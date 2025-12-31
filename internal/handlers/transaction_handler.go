@@ -35,6 +35,11 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 
 	transaction.ID = uuid.New().String()
 
+	// Set CreatedByID from context
+	if userID, exists := c.Get("user_id"); exists {
+		transaction.CreatedByID = userID.(string)
+	}
+
 	// Convert empty string pointer to nil to avoid FK constraint violation
 	if transaction.ToWalletID != nil && *transaction.ToWalletID == "" {
 		transaction.ToWalletID = nil
