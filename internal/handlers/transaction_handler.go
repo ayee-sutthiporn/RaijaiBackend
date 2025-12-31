@@ -35,6 +35,11 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 
 	transaction.ID = uuid.New().String()
 
+	// Convert empty string pointer to nil to avoid FK constraint violation
+	if transaction.ToWalletID != nil && *transaction.ToWalletID == "" {
+		transaction.ToWalletID = nil
+	}
+
 	if result := h.db.Create(&transaction); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
