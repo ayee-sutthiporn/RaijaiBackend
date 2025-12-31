@@ -20,12 +20,7 @@ func (d *DateOnly) UnmarshalJSON(b []byte) error {
 		s = s[1 : len(s)-1]
 	}
 
-	t, err := time.Parse("2006-01-02", s)
-	if err != nil {
-		return err
-	}
-	d.Time = t
-	return nil
+	return d.parseString(s)
 }
 
 func (d DateOnly) MarshalJSON() ([]byte, error) {
