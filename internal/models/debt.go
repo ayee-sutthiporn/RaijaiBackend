@@ -36,6 +36,6 @@ type Debt struct {
 	Remark          string           `json:"remark"`
 	AutoDeduct      bool             `json:"autoDeduct"`
 	CreatedAt       time.Time        `json:"createdAt"`
-	UserID          string           `json:"userId"`
+	UserID          string           `gorm:"index" json:"userId"`
 	User            User             `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }

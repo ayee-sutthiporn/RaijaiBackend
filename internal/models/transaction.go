@@ -24,7 +24,7 @@ type Transaction struct {
 	Category    *Category       `gorm:"foreignKey:CategoryID" json:"category"`
 	Description string          `json:"description"`
 	Date        DateOnly        `gorm:"type:date" json:"date"`
-	CreatedByID string          `json:"createdById"`
+	CreatedByID string          `gorm:"index" json:"createdById"`
 	CreatedBy   User            `gorm:"foreignKey:CreatedByID" json:"createdBy"`
 	CreatedAt   time.Time       `json:"createdAt"`
 }

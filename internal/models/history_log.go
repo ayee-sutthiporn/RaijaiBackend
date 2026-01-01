@@ -24,6 +24,6 @@ type HistoryLog struct {
 	PreviousValue json.RawMessage `gorm:"type:jsonb" json:"previousValue" swaggertype:"string"`
 	NewValue      json.RawMessage `gorm:"type:jsonb" json:"newValue" swaggertype:"string"`
 	Timestamp     time.Time       `json:"timestamp"`
-	UserID        string          `json:"userId"`
+	UserID        string          `gorm:"index" json:"userId"`
 	User          User            `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
