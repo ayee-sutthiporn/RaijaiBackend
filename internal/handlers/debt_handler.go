@@ -26,7 +26,17 @@ func NewDebtHandler(db *gorm.DB) *DebtHandler {
 // @Param debt body models.Debt true "Debt Data"
 // @Success 201 {object} models.Debt
 // @Router /debts [post]
+// CreateDebt godoc
+// @Summary Create a new debt record
+// @Description Create a new debt (Lent or Borrowed)
+// @Tags debts
+// @Accept json
+// @Produce json
+// @Param debt body models.Debt true "Debt Data"
+// @Success 201 {object} models.Debt
+// @Router /debts [post]
 func (h *DebtHandler) CreateDebt(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	var debt models.Debt
 	if err := c.ShouldBindJSON(&debt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -34,6 +44,7 @@ func (h *DebtHandler) CreateDebt(c *gin.Context) {
 	}
 
 	debt.ID = uuid.New().String()
+	debt.UserID = userID
 
 	if result := h.db.Create(&debt); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
@@ -51,8 +62,9 @@ func (h *DebtHandler) CreateDebt(c *gin.Context) {
 // @Success 200 {array} models.Debt
 // @Router /debts [get]
 func (h *DebtHandler) GetDebts(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	var debts []models.Debt
-	if result := h.db.Find(&debts); result.Error != nil {
+	if result := h.db.Where("user_id = ?", userID).Find(&debts); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
@@ -71,10 +83,11 @@ func (h *DebtHandler) GetDebts(c *gin.Context) {
 // @Success 200 {object} models.Debt
 // @Router /debts/{id} [put]
 func (h *DebtHandler) UpdateDebt(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
 	var debt models.Debt
 
-	if result := h.db.First(&debt, "id = ?", id); result.Error != nil {
+	if result := h.db.Where("id = ? AND user_id = ?", id, userID).First(&debt); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Debt not found"})
 		return
 	}
@@ -83,6 +96,10 @@ func (h *DebtHandler) UpdateDebt(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Ensure ID and UserID are not changed
+	debt.ID = id
+	debt.UserID = userID
 
 	h.db.Save(&debt)
 	c.JSON(http.StatusOK, debt)
@@ -97,8 +114,9 @@ func (h *DebtHandler) UpdateDebt(c *gin.Context) {
 // @Success 200 {object} map[string]string
 // @Router /debts/{id} [delete]
 func (h *DebtHandler) DeleteDebt(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
-	if result := h.db.Delete(&models.Debt{}, "id = ?", id); result.Error != nil {
+	if result := h.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Debt{}); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
@@ -121,6 +139,7 @@ type PaymentRequest struct {
 // @Success 200 {object} models.Debt
 // @Router /debts/{id}/payment [post]
 func (h *DebtHandler) MakePayment(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
 	var req PaymentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -129,7 +148,7 @@ func (h *DebtHandler) MakePayment(c *gin.Context) {
 	}
 
 	var debt models.Debt
-	if result := h.db.First(&debt, "id = ?", id); result.Error != nil {
+	if result := h.db.Where("id = ? AND user_id = ?", id, userID).First(&debt); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Debt not found"})
 		return
 	}

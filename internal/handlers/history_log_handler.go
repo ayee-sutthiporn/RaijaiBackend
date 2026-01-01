@@ -26,11 +26,12 @@ func NewHistoryLogHandler(db *gorm.DB) *HistoryLogHandler {
 // @Success 200 {array} models.HistoryLog
 // @Router /history [get]
 func (h *HistoryLogHandler) GetHistoryLogs(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	entityID := c.Query("entity_id")
 	entityType := c.Query("entity_type")
 	var logs []models.HistoryLog
 
-	query := h.db.Model(&models.HistoryLog{})
+	query := h.db.Model(&models.HistoryLog{}).Where("user_id = ?", userID)
 	if entityID != "" {
 		query = query.Where("entity_id = ?", entityID)
 	}

@@ -27,7 +27,17 @@ func NewCategoryHandler(db *gorm.DB) *CategoryHandler {
 // @Success 201 {object} models.Category
 // @Router /categories [post]
 // @Router /categories [post]
+// CreateCategory godoc
+// @Summary Create a new category
+// @Description Create a new category
+// @Tags categories
+// @Accept json
+// @Produce json
+// @Param category body models.Category true "Category Data"
+// @Success 201 {object} models.Category
+// @Router /categories [post]
 func (h *CategoryHandler) CreateCategory(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	var category models.Category
 	if err := c.ShouldBindJSON(&category); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -35,6 +45,7 @@ func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 	}
 
 	category.ID = uuid.New().String()
+	category.UserID = userID
 
 	if result := h.db.Create(&category); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
@@ -52,8 +63,9 @@ func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 // @Success 200 {array} models.Category
 // @Router /categories [get]
 func (h *CategoryHandler) GetCategories(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	var categories []models.Category
-	if result := h.db.Find(&categories); result.Error != nil {
+	if result := h.db.Where("user_id = ?", userID).Find(&categories); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
@@ -72,10 +84,11 @@ func (h *CategoryHandler) GetCategories(c *gin.Context) {
 // @Success 200 {object} models.Category
 // @Router /categories/{id} [put]
 func (h *CategoryHandler) UpdateCategory(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
 	var category models.Category
 
-	if result := h.db.First(&category, "id = ?", id); result.Error != nil {
+	if result := h.db.Where("id = ? AND user_id = ?", id, userID).First(&category); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
 		return
 	}
@@ -85,6 +98,10 @@ func (h *CategoryHandler) UpdateCategory(c *gin.Context) {
 		return
 	}
 
+	// Ensure ID and UserID are not changed
+	category.ID = id
+	category.UserID = userID
+	
 	h.db.Save(&category)
 	c.JSON(http.StatusOK, category)
 }
@@ -98,8 +115,9 @@ func (h *CategoryHandler) UpdateCategory(c *gin.Context) {
 // @Success 200 {object} map[string]string
 // @Router /categories/{id} [delete]
 func (h *CategoryHandler) DeleteCategory(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
-	if result := h.db.Delete(&models.Category{}, "id = ?", id); result.Error != nil {
+	if result := h.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Category{}); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}

@@ -26,6 +26,15 @@ func NewWalletHandler(db *gorm.DB) *WalletHandler {
 // @Param wallet body models.Wallet true "Wallet Data"
 // @Success 201 {object} models.Wallet
 // @Router /wallets [post]
+// CreateWallet godoc
+// @Summary Create a new wallet
+// @Description Create a new wallet
+// @Tags wallets
+// @Accept json
+// @Produce json
+// @Param wallet body models.Wallet true "Wallet Data"
+// @Success 201 {object} models.Wallet
+// @Router /wallets [post]
 func (h *WalletHandler) CreateWallet(c *gin.Context) {
 	var wallet models.Wallet
 	if err := c.ShouldBindJSON(&wallet); err != nil {
@@ -34,11 +43,7 @@ func (h *WalletHandler) CreateWallet(c *gin.Context) {
 	}
 
 	wallet.ID = uuid.New().String()
-
-	// Set owner from auth token
-	if userID, exists := c.Get("user_id"); exists {
-		wallet.OwnerID = userID.(string)
-	}
+	wallet.OwnerID = c.MustGet("user_id").(string)
 
 	if result := h.db.Create(&wallet); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
@@ -53,19 +58,13 @@ func (h *WalletHandler) CreateWallet(c *gin.Context) {
 // @Description Get all wallets specific to a user
 // @Tags wallets
 // @Produce json
-// @Param user_id query string true "User ID"
 // @Success 200 {array} models.Wallet
 // @Router /wallets [get]
 func (h *WalletHandler) GetWallets(c *gin.Context) {
-	userID := c.Query("user_id")
+	userID := c.MustGet("user_id").(string)
 	var wallets []models.Wallet
 
-	query := h.db.Model(&models.Wallet{})
-	if userID != "" {
-		query = query.Where("owner_id = ?", userID)
-	}
-
-	if result := query.Find(&wallets); result.Error != nil {
+	if result := h.db.Where("owner_id = ?", userID).Find(&wallets); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
@@ -84,10 +83,11 @@ func (h *WalletHandler) GetWallets(c *gin.Context) {
 // @Success 200 {object} models.Wallet
 // @Router /wallets/{id} [put]
 func (h *WalletHandler) UpdateWallet(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
 	var wallet models.Wallet
 
-	if result := h.db.First(&wallet, "id = ?", id); result.Error != nil {
+	if result := h.db.Where("id = ? AND owner_id = ?", id, userID).First(&wallet); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Wallet not found"})
 		return
 	}
@@ -96,6 +96,10 @@ func (h *WalletHandler) UpdateWallet(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Ensure ID and OwnerID are not changed
+	wallet.ID = id
+	wallet.OwnerID = userID
 
 	h.db.Save(&wallet)
 	c.JSON(http.StatusOK, wallet)
@@ -110,8 +114,9 @@ func (h *WalletHandler) UpdateWallet(c *gin.Context) {
 // @Success 200 {object} map[string]string
 // @Router /wallets/{id} [delete]
 func (h *WalletHandler) DeleteWallet(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
-	if result := h.db.Delete(&models.Wallet{}, "id = ?", id); result.Error != nil {
+	if result := h.db.Where("id = ? AND owner_id = ?", id, userID).Delete(&models.Wallet{}, "id = ?", id); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}

@@ -26,6 +26,15 @@ func NewTransactionHandler(db *gorm.DB) *TransactionHandler {
 // @Param transaction body models.Transaction true "Transaction Data"
 // @Success 201 {object} models.Transaction
 // @Router /transactions [post]
+// CreateTransaction godoc
+// @Summary Create a new transaction
+// @Description Create a new transaction (Income, Expense, Transfer)
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Param transaction body models.Transaction true "Transaction Data"
+// @Success 201 {object} models.Transaction
+// @Router /transactions [post]
 func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 	var transaction models.Transaction
 	if err := c.ShouldBindJSON(&transaction); err != nil {
@@ -36,9 +45,7 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 	transaction.ID = uuid.New().String()
 
 	// Set CreatedByID from context
-	if userID, exists := c.Get("user_id"); exists {
-		transaction.CreatedByID = userID.(string)
-	}
+	transaction.CreatedByID = c.MustGet("user_id").(string)
 
 	// Convert empty string pointer to nil to avoid FK constraint violation
 	if transaction.ToWalletID != nil && *transaction.ToWalletID == "" {
@@ -62,10 +69,11 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 // @Success 200 {array} models.Transaction
 // @Router /transactions [get]
 func (h *TransactionHandler) GetTransactions(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	walletID := c.Query("wallet_id")
 	var transactions []models.Transaction
 
-	query := h.db.Model(&models.Transaction{})
+	query := h.db.Model(&models.Transaction{}).Where("created_by_id = ?", userID)
 	if walletID != "" {
 		query = query.Where("wallet_id = ?", walletID)
 	}
@@ -89,10 +97,11 @@ func (h *TransactionHandler) GetTransactions(c *gin.Context) {
 // @Success 200 {object} models.Transaction
 // @Router /transactions/{id} [put]
 func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
 	var transaction models.Transaction
 
-	if result := h.db.First(&transaction, "id = ?", id); result.Error != nil {
+	if result := h.db.Where("id = ? AND created_by_id = ?", id, userID).First(&transaction); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
 		return
 	}
@@ -101,6 +110,10 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Ensure ID and CreatedByID are not changed
+	transaction.ID = id
+	transaction.CreatedByID = userID
 
 	h.db.Save(&transaction)
 	c.JSON(http.StatusOK, transaction)
@@ -115,8 +128,9 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 // @Success 200 {object} map[string]string
 // @Router /transactions/{id} [delete]
 func (h *TransactionHandler) DeleteTransaction(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
-	if result := h.db.Delete(&models.Transaction{}, "id = ?", id); result.Error != nil {
+	if result := h.db.Where("id = ? AND created_by_id = ?", id, userID).Delete(&models.Transaction{}, "id = ?", id); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}

@@ -26,6 +26,8 @@ type Category struct {
 	Color     string       `json:"color"`
 	Icon      string       `json:"icon"`
 	CreatedAt time.Time    `json:"createdAt"`
+	UserID    string       `json:"userId"`
+	User      User         `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
 type WalletType string
