@@ -173,21 +173,85 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 	id := c.Param("id")
 	var transaction models.Transaction
 
-	if result := h.db.Where("id = ? AND created_by_id = ?", id, userID).First(&transaction); result.Error != nil {
+	// Start DB Transaction
+	tx := h.db.Begin()
+
+	var existingTransaction models.Transaction
+	if result := tx.Where("id = ? AND created_by_id = ?", id, userID).First(&existingTransaction); result.Error != nil {
+		tx.Rollback()
 		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
 		return
 	}
 
+	// 1. Revert impact of existing transaction
+	var oldWallet models.Wallet
+	if err := tx.First(&oldWallet, "id = ?", existingTransaction.WalletID).Error; err == nil {
+		if existingTransaction.Type == "INCOME" {
+			oldWallet.Balance -= existingTransaction.Amount
+		} else if existingTransaction.Type == "EXPENSE" {
+			oldWallet.Balance += existingTransaction.Amount
+		} else if existingTransaction.Type == "TRANSFER" {
+			oldWallet.Balance += existingTransaction.Amount
+			if existingTransaction.ToWalletID != nil {
+				var oldToWallet models.Wallet
+				if err := tx.First(&oldToWallet, "id = ?", *existingTransaction.ToWalletID).Error; err == nil {
+					oldToWallet.Balance -= existingTransaction.Amount
+					tx.Save(&oldToWallet)
+				}
+			}
+		}
+		tx.Save(&oldWallet)
+	}
+
+	// 2. Bind new data (but keep IDs safe)
 	if err := c.ShouldBindJSON(&transaction); err != nil {
+		tx.Rollback()
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	// Ensure ID and CreatedByID are not changed
 	transaction.ID = id
 	transaction.CreatedByID = userID
 
-	h.db.Save(&transaction)
+	// Convert empty string pointer to nil for ToWalletID
+	if transaction.ToWalletID != nil && *transaction.ToWalletID == "" {
+		transaction.ToWalletID = nil
+	}
+
+	// 3. Apply impact of new transaction
+	var newWallet models.Wallet
+	if err := tx.First(&newWallet, "id = ?", transaction.WalletID).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "New Wallet not found"})
+		return
+	}
+
+	if transaction.Type == "INCOME" {
+		newWallet.Balance += transaction.Amount
+	} else if transaction.Type == "EXPENSE" {
+		newWallet.Balance -= transaction.Amount
+	} else if transaction.Type == "TRANSFER" {
+		newWallet.Balance -= transaction.Amount
+		if transaction.ToWalletID != nil {
+			var newToWallet models.Wallet
+			if err := tx.First(&newToWallet, "id = ?", *transaction.ToWalletID).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "New Target wallet not found"})
+				return
+			}
+			newToWallet.Balance += transaction.Amount
+			tx.Save(&newToWallet)
+		}
+	}
+	tx.Save(&newWallet)
+
+	// 4. Save Transaction
+	if err := tx.Save(&transaction).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update transaction"})
+		return
+	}
+
+	tx.Commit()
 	c.JSON(http.StatusOK, transaction)
 }
 
