@@ -1,1441 +1,1247 @@
 {
-    "schemes": [
-        "https"
-    ],
-    "swagger": "2.0",
-    "info": {
-        "description": "RESTful API for RaiJai Application",
-        "title": "RaiJai API",
-        "contact": {},
-        "version": "1.0"
-    },
-    "host": "raijai-api.sutthiporn.dev",
-    "basePath": "/api/v1",
-    "paths": {
-        "/auth/login": {
-            "post": {
-                "description": "Login with username and password",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Login to the system",
-                "parameters": [
-                    {
-                        "description": "Username and Password",
-                        "name": "credentials",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Token",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
+  "schemes": ["https"],
+  "swagger": "2.0",
+  "info": {
+    "description": "RESTful API for RaiJai Application",
+    "title": "RaiJai API",
+    "contact": {},
+    "version": "1.0"
+  },
+  "host": "raijai-api.sutthiporn.dev",
+  "basePath": "/api/v1",
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "description": "Login with username and password",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["auth"],
+        "summary": "Login to the system",
+        "parameters": [
+          {
+            "description": "Username and Password",
+            "name": "credentials",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             }
-        },
-        "/auth/refresh-token": {
-            "post": {
-                "description": "Get a new access token using a refresh token",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Refresh access token",
-                "parameters": [
-                    {
-                        "description": "Refresh Token",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "New Token",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             }
-        },
-        "/auth/register": {
-            "post": {
-                "description": "Register a new user account",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Register a new user",
-                "parameters": [
-                    {
-                        "description": "User Details",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Success Message",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/categories": {
-            "get": {
-                "description": "Get all categories (optional filter by type)",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Get all categories",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category Type (INCOME/EXPENSE)",
-                        "name": "type",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Category"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a new category",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Create a new category",
-                "parameters": [
-                    {
-                        "description": "Category Data",
-                        "name": "category",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Category"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.Category"
-                        }
-                    }
-                }
-            }
-        },
-        "/categories/{id}": {
-            "put": {
-                "description": "Update a category by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Update a category",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Category Data",
-                        "name": "category",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Category"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Category"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a category by ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "categories"
-                ],
-                "summary": "Delete a category",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/debts": {
-            "get": {
-                "description": "Get all debts (optional filter by type)",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "debts"
-                ],
-                "summary": "Get all debts",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Debt Type (LENT/BORROWED)",
-                        "name": "type",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Debt"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a new debt (Lent or Borrowed)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "debts"
-                ],
-                "summary": "Create a new debt record",
-                "parameters": [
-                    {
-                        "description": "Debt Data",
-                        "name": "debt",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Debt"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.Debt"
-                        }
-                    }
-                }
-            }
-        },
-        "/debts/{id}": {
-            "get": {
-                "description": "Get a debt by ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "debts"
-                ],
-                "summary": "Get a debt by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Debt ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Debt"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a debt by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "debts"
-                ],
-                "summary": "Update a debt",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Debt ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Debt Data",
-                        "name": "debt",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Debt"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Debt"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a debt by ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "debts"
-                ],
-                "summary": "Delete a debt",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Debt ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/debts/{id}/payment": {
-            "post": {
-                "description": "Deduct amount from debt",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "debts"
-                ],
-                "summary": "Make a payment for a debt",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Debt ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Payment Amount",
-                        "name": "payment",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.PaymentRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Debt"
-                        }
-                    }
-                }
-            }
-        },
-        "/history": {
-            "get": {
-                "description": "Get history logs, optionally filtered by entity",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "history"
-                ],
-                "summary": "Get history logs",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by Entity ID",
-                        "name": "entity_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by Entity Type",
-                        "name": "entity_type",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.HistoryLog"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/reports/balance-history": {
-            "get": {
-                "description": "Get history of total balance over time",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "reports"
-                ],
-                "summary": "Get balance history",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": true
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/reports/category-pie": {
-            "get": {
-                "description": "Get pie chart data for categories",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "reports"
-                ],
-                "summary": "Get category distribution",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": true
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/reports/summary": {
-            "get": {
-                "description": "Get summary of income and expenses",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "reports"
-                ],
-                "summary": "Get income/expense summary",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/transactions": {
-            "get": {
-                "description": "Get all transactions with optional filters",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "transactions"
-                ],
-                "summary": "Get all transactions",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by Wallet ID",
-                        "name": "wallet_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by Category ID",
-                        "name": "category_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Start Date (YYYY-MM-DD)",
-                        "name": "start_date",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "End Date (YYYY-MM-DD)",
-                        "name": "end_date",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search Description",
-                        "name": "search",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Transaction"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a new transaction (Income, Expense, Transfer)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "transactions"
-                ],
-                "summary": "Create a new transaction",
-                "parameters": [
-                    {
-                        "description": "Transaction Data",
-                        "name": "transaction",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Transaction"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.Transaction"
-                        }
-                    }
-                }
-            }
-        },
-        "/transactions/{id}": {
-            "get": {
-                "description": "Get a transaction by ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "transactions"
-                ],
-                "summary": "Get a transaction by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Transaction ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Transaction"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a transaction by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "transactions"
-                ],
-                "summary": "Update a transaction",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Transaction ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Transaction Data",
-                        "name": "transaction",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Transaction"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Transaction"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a transaction by ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "transactions"
-                ],
-                "summary": "Delete a transaction",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Transaction ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/upload/image": {
-            "post": {
-                "description": "Upload an image file (returns a mock URL)",
-                "consumes": [
-                    "multipart/form-data"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "system"
-                ],
-                "summary": "Upload an image",
-                "parameters": [
-                    {
-                        "type": "file",
-                        "description": "Image File",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Image URL",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/users": {
-            "post": {
-                "description": "Create a new user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Create a new user",
-                "parameters": [
-                    {
-                        "description": "User Data",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    }
-                }
-            }
-        },
-        "/users/me": {
-            "get": {
-                "description": "Get profile of the logged-in user",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Get current user profile",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update profile details of the logged-in user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Update current user profile",
-                "parameters": [
-                    {
-                        "description": "User Details",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    }
-                }
-            }
-        },
-        "/users/me/change-password": {
-            "post": {
-                "description": "Change the password of the logged-in user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Change password",
-                "parameters": [
-                    {
-                        "description": "Old and New Password",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/users/{id}": {
-            "get": {
-                "description": "Get user details",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Get a user by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
-                    }
-                }
-            }
-        },
-        "/wallets": {
-            "get": {
-                "description": "Get all wallets specific to a user",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "wallets"
-                ],
-                "summary": "Get all wallets by User ID",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Wallet"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create a new wallet\nCreate a new wallet",
-                "consumes": [
-                    "application/json",
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json",
-                    "application/json"
-                ],
-                "tags": [
-                    "wallets",
-                    "wallets"
-                ],
-                "summary": "Create a new wallet",
-                "parameters": [
-                    {
-                        "description": "Wallet Data",
-                        "name": "wallet",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Wallet"
-                        }
-                    },
-                    {
-                        "description": "Wallet Data",
-                        "name": "wallet",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Wallet"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/models.Wallet"
-                        }
-                    }
-                }
-            }
-        },
-        "/wallets/{id}": {
-            "get": {
-                "description": "Get a wallet by ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "wallets"
-                ],
-                "summary": "Get a wallet by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Wallet ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Wallet"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update a wallet by ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "wallets"
-                ],
-                "summary": "Update a wallet",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Wallet ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Wallet Data",
-                        "name": "wallet",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Wallet"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Wallet"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete a wallet by ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "wallets"
-                ],
-                "summary": "Delete a wallet",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Wallet ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
+          }
         }
+      }
     },
-    "definitions": {
-        "handlers.PaymentRequest": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "number"
-                }
+    "/auth/refresh-token": {
+      "post": {
+        "description": "Get a new access token using a refresh token",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["auth"],
+        "summary": "Refresh access token",
+        "parameters": [
+          {
+            "description": "Refresh Token",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             }
-        },
-        "models.ActionType": {
-            "type": "string",
-            "enum": [
-                "CREATE",
-                "UPDATE",
-                "DELETE",
-                "PAYMENT"
-            ],
-            "x-enum-varnames": [
-                "ActionCreate",
-                "ActionUpdate",
-                "ActionDelete",
-                "ActionPayment"
-            ]
-        },
-        "models.Category": {
-            "type": "object",
-            "properties": {
-                "color": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "icon": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/models.CategoryType"
-                },
-                "user": {
-                    "$ref": "#/definitions/models.User"
-                },
-                "userId": {
-                    "type": "string"
-                }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "New Token",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             }
-        },
-        "models.CategoryType": {
-            "type": "string",
-            "enum": [
-                "INCOME",
-                "EXPENSE"
-            ],
-            "x-enum-varnames": [
-                "CategoryTypeIncome",
-                "CategoryTypeExpense"
-            ]
-        },
-        "models.DateOnly": {
-            "type": "object",
-            "properties": {
-                "time.Time": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.Debt": {
-            "type": "object",
-            "properties": {
-                "autoDeduct": {
-                    "type": "boolean"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "dueDate": {
-                    "$ref": "#/definitions/models.DateOnly"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "installmentPlan": {
-                    "$ref": "#/definitions/models.InstallmentPlan"
-                },
-                "isInstallment": {
-                    "type": "boolean"
-                },
-                "personName": {
-                    "type": "string"
-                },
-                "remainingAmount": {
-                    "type": "number"
-                },
-                "remark": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "totalAmount": {
-                    "type": "number"
-                },
-                "type": {
-                    "$ref": "#/definitions/models.DebtType"
-                },
-                "user": {
-                    "$ref": "#/definitions/models.User"
-                },
-                "userId": {
-                    "type": "string"
-                },
-                "wallet": {
-                    "$ref": "#/definitions/models.Wallet"
-                },
-                "walletId": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.DebtType": {
-            "type": "string",
-            "enum": [
-                "LENT",
-                "BORROWED"
-            ],
-            "x-enum-varnames": [
-                "DebtTypeLent",
-                "DebtTypeBorrowed"
-            ]
-        },
-        "models.HistoryLog": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "$ref": "#/definitions/models.ActionType"
-                },
-                "changes": {
-                    "type": "string"
-                },
-                "details": {
-                    "type": "string"
-                },
-                "entityId": {
-                    "type": "string"
-                },
-                "entityType": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "newValue": {
-                    "type": "string"
-                },
-                "previousValue": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/models.User"
-                },
-                "userId": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.InstallmentPlan": {
-            "type": "object",
-            "properties": {
-                "interestRate": {
-                    "type": "number"
-                },
-                "monthlyAmount": {
-                    "type": "number"
-                },
-                "paidMonths": {
-                    "type": "integer"
-                },
-                "startDate": {
-                    "$ref": "#/definitions/models.DateOnly"
-                },
-                "totalMonths": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.Transaction": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "number"
-                },
-                "category": {
-                    "$ref": "#/definitions/models.Category"
-                },
-                "categoryId": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "createdBy": {
-                    "$ref": "#/definitions/models.User"
-                },
-                "createdById": {
-                    "type": "string"
-                },
-                "date": {
-                    "$ref": "#/definitions/models.DateOnly"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "toWallet": {
-                    "$ref": "#/definitions/models.Wallet"
-                },
-                "toWalletId": {
-                    "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/models.TransactionType"
-                },
-                "wallet": {
-                    "$ref": "#/definitions/models.Wallet"
-                },
-                "walletId": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.TransactionType": {
-            "type": "string",
-            "enum": [
-                "INCOME",
-                "EXPENSE",
-                "TRANSFER"
-            ],
-            "x-enum-varnames": [
-                "TransactionTypeIncome",
-                "TransactionTypeExpense",
-                "TransactionTypeTransfer"
-            ]
-        },
-        "models.User": {
-            "type": "object",
-            "properties": {
-                "avatarUrl": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.Wallet": {
-            "type": "object",
-            "properties": {
-                "balance": {
-                    "type": "number"
-                },
-                "color": {
-                    "type": "string"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "owner": {
-                    "$ref": "#/definitions/models.User"
-                },
-                "ownerId": {
-                    "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/models.WalletType"
-                }
-            }
-        },
-        "models.WalletType": {
-            "type": "string",
-            "enum": [
-                "CASH",
-                "BANK",
-                "CREDIT_CARD"
-            ],
-            "x-enum-varnames": [
-                "WalletTypeCash",
-                "WalletTypeBank",
-                "WalletTypeCreditCard"
-            ]
+          }
         }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "description": "Register a new user account",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["auth"],
+        "summary": "Register a new user",
+        "parameters": [
+          {
+            "description": "User Details",
+            "name": "user",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success Message",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "description": "Get all categories (optional filter by type)",
+        "produces": ["application/json"],
+        "tags": ["categories"],
+        "summary": "Get all categories",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Category Type (INCOME/EXPENSE)",
+            "name": "type",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Category"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new category",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["categories"],
+        "summary": "Create a new category",
+        "parameters": [
+          {
+            "description": "Category Data",
+            "name": "category",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/models.Category"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/models.Category"
+            }
+          }
+        }
+      }
+    },
+    "/categories/{id}": {
+      "put": {
+        "description": "Update a category by ID",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["categories"],
+        "summary": "Update a category",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Category ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Category Data",
+            "name": "category",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/models.Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.Category"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a category by ID",
+        "produces": ["application/json"],
+        "tags": ["categories"],
+        "summary": "Delete a category",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Category ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/debts": {
+      "get": {
+        "description": "Get all debts (optional filter by type)",
+        "produces": ["application/json"],
+        "tags": ["debts"],
+        "summary": "Get all debts",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Debt Type (LENT/BORROWED)",
+            "name": "type",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Debt"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new debt (Lent or Borrowed)",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["debts"],
+        "summary": "Create a new debt record",
+        "parameters": [
+          {
+            "description": "Debt Data",
+            "name": "debt",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/models.Debt"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/models.Debt"
+            }
+          }
+        }
+      }
+    },
+    "/debts/{id}": {
+      "get": {
+        "description": "Get a debt by ID",
+        "produces": ["application/json"],
+        "tags": ["debts"],
+        "summary": "Get a debt by ID",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Debt ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.Debt"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Update a debt by ID",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["debts"],
+        "summary": "Update a debt",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Debt ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Debt Data",
+            "name": "debt",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/models.Debt"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.Debt"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a debt by ID",
+        "produces": ["application/json"],
+        "tags": ["debts"],
+        "summary": "Delete a debt",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Debt ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/debts/{id}/payment": {
+      "post": {
+        "description": "Deduct amount from debt",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["debts"],
+        "summary": "Make a payment for a debt",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Debt ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Payment Amount",
+            "name": "payment",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/handlers.PaymentRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.Debt"
+            }
+          }
+        }
+      }
+    },
+    "/history": {
+      "get": {
+        "description": "Get history logs, optionally filtered by entity",
+        "produces": ["application/json"],
+        "tags": ["history"],
+        "summary": "Get history logs",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Filter by Entity ID",
+            "name": "entity_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Filter by Entity Type",
+            "name": "entity_type",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.HistoryLog"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/balance-history": {
+      "get": {
+        "description": "Get history of total balance over time",
+        "produces": ["application/json"],
+        "tags": ["reports"],
+        "summary": "Get balance history",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/category-pie": {
+      "get": {
+        "description": "Get pie chart data for categories",
+        "produces": ["application/json"],
+        "tags": ["reports"],
+        "summary": "Get category distribution",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/summary": {
+      "get": {
+        "description": "Get summary of income and expenses",
+        "produces": ["application/json"],
+        "tags": ["reports"],
+        "summary": "Get income/expense summary",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        }
+      }
+    },
+    "/transactions": {
+      "get": {
+        "description": "Get all transactions with optional filters",
+        "produces": ["application/json"],
+        "tags": ["transactions"],
+        "summary": "Get all transactions",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Filter by Wallet ID",
+            "name": "wallet_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Filter by Category ID",
+            "name": "category_id",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Start Date (YYYY-MM-DD)",
+            "name": "start_date",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "End Date (YYYY-MM-DD)",
+            "name": "end_date",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "description": "Search Description",
+            "name": "search",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Transaction"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new transaction (Income, Expense, Transfer)",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["transactions"],
+        "summary": "Create a new transaction",
+        "parameters": [
+          {
+            "description": "Transaction Data",
+            "name": "transaction",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/models.Transaction"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/models.Transaction"
+            }
+          }
+        }
+      }
+    },
+    "/transactions/{id}": {
+      "get": {
+        "description": "Get a transaction by ID",
+        "produces": ["application/json"],
+        "tags": ["transactions"],
+        "summary": "Get a transaction by ID",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Transaction ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.Transaction"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Update a transaction by ID",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["transactions"],
+        "summary": "Update a transaction",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Transaction ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Transaction Data",
+            "name": "transaction",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/models.Transaction"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.Transaction"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a transaction by ID",
+        "produces": ["application/json"],
+        "tags": ["transactions"],
+        "summary": "Delete a transaction",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Transaction ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upload/image": {
+      "post": {
+        "description": "Upload an image file (returns a mock URL)",
+        "consumes": ["multipart/form-data"],
+        "produces": ["application/json"],
+        "tags": ["system"],
+        "summary": "Upload an image",
+        "parameters": [
+          {
+            "type": "file",
+            "description": "Image File",
+            "name": "file",
+            "in": "formData",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Image URL",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users": {
+      "post": {
+        "description": "Create a new user",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["users"],
+        "summary": "Create a new user",
+        "parameters": [
+          {
+            "description": "User Data",
+            "name": "user",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/models.User"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/models.User"
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "description": "Get profile of the logged-in user",
+        "produces": ["application/json"],
+        "tags": ["users"],
+        "summary": "Get current user profile",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.User"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Update profile details of the logged-in user",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["users"],
+        "summary": "Update current user profile",
+        "parameters": [
+          {
+            "description": "User Details",
+            "name": "user",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.User"
+            }
+          }
+        }
+      }
+    },
+    "/users/me/change-password": {
+      "post": {
+        "description": "Change the password of the logged-in user",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["users"],
+        "summary": "Change password",
+        "parameters": [
+          {
+            "description": "Old and New Password",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "description": "Get user details",
+        "produces": ["application/json"],
+        "tags": ["users"],
+        "summary": "Get a user by ID",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "User ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.User"
+            }
+          }
+        }
+      }
+    },
+    "/wallets": {
+      "get": {
+        "description": "Get all wallets specific to a user",
+        "produces": ["application/json"],
+        "tags": ["wallets"],
+        "summary": "Get all wallets by User ID",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Wallet"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Create a new wallet\nCreate a new wallet",
+        "consumes": ["application/json", "application/json"],
+        "produces": ["application/json", "application/json"],
+        "tags": ["wallets", "wallets"],
+        "summary": "Create a new wallet",
+        "parameters": [
+          {
+            "description": "Wallet Data",
+            "name": "wallet",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/models.Wallet"
+            }
+          },
+          {
+            "description": "Wallet Data",
+            "name": "wallet",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/models.Wallet"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/models.Wallet"
+            }
+          }
+        }
+      }
+    },
+    "/wallets/{id}": {
+      "get": {
+        "description": "Get a wallet by ID",
+        "produces": ["application/json"],
+        "tags": ["wallets"],
+        "summary": "Get a wallet by ID",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Wallet ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.Wallet"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Update a wallet by ID",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "tags": ["wallets"],
+        "summary": "Update a wallet",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Wallet ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Wallet Data",
+            "name": "wallet",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/models.Wallet"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.Wallet"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a wallet by ID",
+        "produces": ["application/json"],
+        "tags": ["wallets"],
+        "summary": "Delete a wallet",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "Wallet ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
     }
+  },
+  "definitions": {
+    "handlers.PaymentRequest": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        }
+      }
+    },
+    "models.ActionType": {
+      "type": "string",
+      "enum": ["CREATE", "UPDATE", "DELETE", "PAYMENT"],
+      "x-enum-varnames": [
+        "ActionCreate",
+        "ActionUpdate",
+        "ActionDelete",
+        "ActionPayment"
+      ]
+    },
+    "models.Category": {
+      "type": "object",
+      "properties": {
+        "color": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/models.CategoryType"
+        },
+        "user": {
+          "$ref": "#/definitions/models.User"
+        },
+        "userId": {
+          "type": "string"
+        }
+      }
+    },
+    "models.CategoryType": {
+      "type": "string",
+      "enum": ["INCOME", "EXPENSE"],
+      "x-enum-varnames": ["CategoryTypeIncome", "CategoryTypeExpense"]
+    },
+    "models.DateOnly": {
+      "type": "object",
+      "properties": {
+        "time.Time": {
+          "type": "string"
+        }
+      }
+    },
+    "models.Debt": {
+      "type": "object",
+      "properties": {
+        "autoDeduct": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "dueDate": {
+          "$ref": "#/definitions/models.DateOnly"
+        },
+        "id": {
+          "type": "string"
+        },
+        "installmentPlan": {
+          "$ref": "#/definitions/models.InstallmentPlan"
+        },
+        "isInstallment": {
+          "type": "boolean"
+        },
+        "personName": {
+          "type": "string"
+        },
+        "remainingAmount": {
+          "type": "number"
+        },
+        "remark": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "totalAmount": {
+          "type": "number"
+        },
+        "type": {
+          "$ref": "#/definitions/models.DebtType"
+        },
+        "user": {
+          "$ref": "#/definitions/models.User"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "wallet": {
+          "$ref": "#/definitions/models.Wallet"
+        },
+        "walletId": {
+          "type": "string"
+        }
+      }
+    },
+    "models.DebtType": {
+      "type": "string",
+      "enum": ["LENT", "BORROWED"],
+      "x-enum-varnames": ["DebtTypeLent", "DebtTypeBorrowed"]
+    },
+    "models.HistoryLog": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "$ref": "#/definitions/models.ActionType"
+        },
+        "changes": {
+          "type": "string"
+        },
+        "details": {
+          "type": "string"
+        },
+        "entityId": {
+          "type": "string"
+        },
+        "entityType": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "newValue": {
+          "type": "string"
+        },
+        "previousValue": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "user": {
+          "$ref": "#/definitions/models.User"
+        },
+        "userId": {
+          "type": "string"
+        }
+      }
+    },
+    "models.InstallmentPlan": {
+      "type": "object",
+      "properties": {
+        "interestRate": {
+          "type": "number"
+        },
+        "monthlyAmount": {
+          "type": "number"
+        },
+        "paidMonths": {
+          "type": "integer"
+        },
+        "startDate": {
+          "$ref": "#/definitions/models.DateOnly"
+        },
+        "totalMonths": {
+          "type": "integer"
+        }
+      }
+    },
+    "models.Transaction": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number"
+        },
+        "category": {
+          "$ref": "#/definitions/models.Category"
+        },
+        "categoryId": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "createdBy": {
+          "$ref": "#/definitions/models.User"
+        },
+        "createdById": {
+          "type": "string"
+        },
+        "date": {
+          "$ref": "#/definitions/models.DateOnly"
+        },
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "toWallet": {
+          "$ref": "#/definitions/models.Wallet"
+        },
+        "toWalletId": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/models.TransactionType"
+        },
+        "wallet": {
+          "$ref": "#/definitions/models.Wallet"
+        },
+        "walletId": {
+          "type": "string"
+        }
+      }
+    },
+    "models.TransactionType": {
+      "type": "string",
+      "enum": ["INCOME", "EXPENSE", "TRANSFER"],
+      "x-enum-varnames": [
+        "TransactionTypeIncome",
+        "TransactionTypeExpense",
+        "TransactionTypeTransfer"
+      ]
+    },
+    "models.User": {
+      "type": "object",
+      "properties": {
+        "avatarUrl": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "models.Wallet": {
+      "type": "object",
+      "properties": {
+        "balance": {
+          "type": "number"
+        },
+        "color": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "owner": {
+          "$ref": "#/definitions/models.User"
+        },
+        "ownerId": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/models.WalletType"
+        }
+      }
+    },
+    "models.WalletType": {
+      "type": "string",
+      "enum": ["CASH", "BANK", "CREDIT_CARD"],
+      "x-enum-varnames": [
+        "WalletTypeCash",
+        "WalletTypeBank",
+        "WalletTypeCreditCard"
+      ]
+    }
+  }
 }
