@@ -12,6 +12,8 @@ type User struct {
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
 	Name      string    `json:"name"`
+	Role      string    `json:"role"`   // ADMIN, USER
+	Status    string    `json:"status"` // ACTIVE, INACTIVE
 	AvatarURL string    `json:"avatarUrl"`
 	CreatedAt time.Time `json:"createdAt"`
 }

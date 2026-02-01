@@ -3,10 +3,12 @@ package handlers
 import (
 	"net/http"
 	"raijai-backend/internal/models"
+	"time"
 
 	"raijai-backend/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -28,18 +30,51 @@ func NewUserHandler(db *gorm.DB) *UserHandler {
 // @Success 201 {object} models.User
 // @Router /users [post]
 func (h *UserHandler) CreateUser(c *gin.Context) {
-	var user models.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var req struct {
+		Name     string `json:"name" binding:"required"`
+		Username string `json:"username" binding:"required"`
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required"`
+		Role     string `json:"role"`
+		Status   string `json:"status"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if result := h.db.Create(&user); result.Error != nil {
+	// Check if username or email already exists
+	var existingUser models.User
+	if result := h.db.Where("username = ? OR email = ?", req.Username, req.Email).First(&existingUser); result.Error == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username or Email already exists"})
+		return
+	}
+
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	newUser := models.User{
+		ID:        uuid.New().String(),
+		Username:  req.Username,
+		Email:     req.Email,
+		Password:  hashedPassword,
+		Name:      req.Name,
+		Role:      req.Role,
+		Status:    req.Status,
+		AvatarURL: "https://ui-avatars.com/api/?name=" + req.Name,
+		CreatedAt: time.Now(),
+	}
+
+	if result := h.db.Create(&newUser); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, user)
+	c.JSON(http.StatusCreated, newUser)
 }
 
 // GetUser godoc
