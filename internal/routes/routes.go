@@ -46,6 +46,8 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			// 1. Users
 			users := protected.Group("/users")
 			{
+				users.GET("", userHandler.GetUsers)
+				users.POST("", userHandler.CreateUser)
 				users.GET("/me", userHandler.GetMe)
 				users.PUT("/me", userHandler.UpdateMe)
 				users.POST("/me/change-password", userHandler.ChangePassword)
