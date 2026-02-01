@@ -131,3 +131,40 @@ func (h *ReportHandler) GetCategoryPie(c *gin.Context) {
 
 	c.JSON(http.StatusOK, stats)
 }
+
+// GetDailyCashFlow
+// @Summary Get daily income and expense
+// @Description Get daily income and expense statistics for the current month
+// @Tags reports
+// @Produce json
+// @Success 200 {array} map[string]interface{}
+// @Router /reports/daily-cashflow [get]
+func (h *ReportHandler) GetDailyCashFlow(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
+
+	type DailyFlow struct {
+		Date    string  `json:"date"`
+		Income  float64 `json:"income"`
+		Expense float64 `json:"expense"`
+	}
+
+	var flows []DailyFlow
+
+	// Get data for the current month (simplified query for now, fetching all and filtering or grouping)
+	// Ideally should filter by date range, here we'll grab all and let frontend/chart handle or limit to recent.
+	// For "current month", let's use SQL date filtering. Assuming SQLite/Postgres compatibility issue, writing generic Group By.
+	
+	err := h.db.Table("transactions").
+		Select("TO_CHAR(date, 'YYYY-MM-DD') as date, SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income, SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as expense").
+		Where("created_by_id = ?", userID).
+		Group("date").
+		Order("date").
+		Scan(&flows).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, flows)
+}

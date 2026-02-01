@@ -99,6 +99,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 				reports.GET("/summary", reportHandler.GetSummary)
 				reports.GET("/balance-history", reportHandler.GetBalanceHistory)
 				reports.GET("/category-pie", reportHandler.GetCategoryPie)
+				reports.GET("/daily-cashflow", reportHandler.GetDailyCashFlow)
 			}
 
 			// 7. System / Mock

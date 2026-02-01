@@ -60,11 +60,12 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 		return
 	}
 
-	if transaction.Type == "INCOME" {
+	switch transaction.Type {
+	case "INCOME":
 		wallet.Balance += transaction.Amount
-	} else if transaction.Type == "EXPENSE" {
+	case "EXPENSE":
 		wallet.Balance -= transaction.Amount
-	} else if transaction.Type == "TRANSFER" {
+	case "TRANSFER":
 		wallet.Balance -= transaction.Amount
 		
 		if transaction.ToWalletID != nil {
@@ -186,11 +187,12 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 	// 1. Revert impact of existing transaction
 	var oldWallet models.Wallet
 	if err := tx.First(&oldWallet, "id = ?", existingTransaction.WalletID).Error; err == nil {
-		if existingTransaction.Type == "INCOME" {
+		switch existingTransaction.Type {
+		case "INCOME":
 			oldWallet.Balance -= existingTransaction.Amount
-		} else if existingTransaction.Type == "EXPENSE" {
+		case "EXPENSE":
 			oldWallet.Balance += existingTransaction.Amount
-		} else if existingTransaction.Type == "TRANSFER" {
+		case "TRANSFER":
 			oldWallet.Balance += existingTransaction.Amount
 			if existingTransaction.ToWalletID != nil {
 				var oldToWallet models.Wallet
@@ -225,11 +227,12 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 		return
 	}
 
-	if transaction.Type == "INCOME" {
+	switch transaction.Type {
+	case "INCOME":
 		newWallet.Balance += transaction.Amount
-	} else if transaction.Type == "EXPENSE" {
+	case "EXPENSE":
 		newWallet.Balance -= transaction.Amount
-	} else if transaction.Type == "TRANSFER" {
+	case "TRANSFER":
 		newWallet.Balance -= transaction.Amount
 		if transaction.ToWalletID != nil {
 			var newToWallet models.Wallet
@@ -280,11 +283,12 @@ func (h *TransactionHandler) DeleteTransaction(c *gin.Context) {
 	// Revert Wallet Balance
 	var wallet models.Wallet
 	if err := tx.First(&wallet, "id = ?", transaction.WalletID).Error; err == nil {
-		if transaction.Type == "INCOME" {
+		switch transaction.Type {
+		case "INCOME":
 			wallet.Balance -= transaction.Amount
-		} else if transaction.Type == "EXPENSE" {
+		case "EXPENSE":
 			wallet.Balance += transaction.Amount
-		} else if transaction.Type == "TRANSFER" {
+		case "TRANSFER":
 			wallet.Balance += transaction.Amount
 			
 			if transaction.ToWalletID != nil {
