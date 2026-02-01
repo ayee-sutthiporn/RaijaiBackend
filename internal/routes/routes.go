@@ -41,7 +41,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		// Protected Middleware Group
 		protected := api.Group("/")
 		// Note: AuthMiddleware now accepts 'mock-' tokens for testing
-		protected.Use(middleware.AuthMiddleware(cfg.KeycloakIssuer, cfg.KeycloakClientID, db))
+		protected.Use(middleware.AuthMiddleware(db))
 		{
 			// 1. Users
 			users := protected.Group("/users")

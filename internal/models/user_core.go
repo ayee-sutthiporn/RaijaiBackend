@@ -8,11 +8,20 @@ type User struct {
 	ID        string    `gorm:"primaryKey" json:"id"`
 	Username  string    `gorm:"uniqueIndex" json:"username"`
 	Email     string    `gorm:"uniqueIndex" json:"email"`
+	Password  string    `json:"-"` // Don't expose password
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
 	Name      string    `json:"name"`
 	AvatarURL string    `json:"avatarUrl"`
 	CreatedAt time.Time `json:"createdAt"`
+}
+
+type UserRegistration struct {
+	Username  string `json:"username" binding:"required"`
+	Password  string `json:"password" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
 }
 
 type CategoryType string

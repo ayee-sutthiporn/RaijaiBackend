@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"raijai-backend/internal/models"
+	"raijai-backend/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -28,23 +30,40 @@ func NewAuthHandler(db *gorm.DB) *AuthHandler {
 // @Success 200 {object} map[string]string "Token"
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	// Mock User Data
-	user := models.User{
-		ID:        "1",
-		Username:  "demo_user",
-		Email:     "demo@raijai.com",
-		FirstName: "Demo",
-		LastName:  "User",
-		Name:      "Demo User",
-		AvatarURL: "https://ui-avatars.com/api/?name=Demo+User",
-		CreatedAt: time.Now(),
+	var credentials struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 
-	// Mock Login Response
+	if err := c.ShouldBindJSON(&credentials); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	if result := h.db.Where("username = ?", credentials.Username).First(&user); result.Error != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		return
+	}
+
+	if !utils.CheckPasswordHash(credentials.Password, user.Password) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		return
+	}
+
+	token, err := utils.GenerateToken(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	// In a real app, refresh token logic would be more complex
+	refreshToken := "mock-refresh-token-" + uuid.New().String()
+
 	c.JSON(http.StatusOK, gin.H{
-		"token":        "mock-jwt-token-example-123456",
-		"refreshToken": "mock-refresh-token-example-123456",
-		"expiresIn":    3600,
+		"token":        token,
+		"refreshToken": refreshToken,
+		"expiresIn":    86400, // 24 hours
 		"user":         user,
 	})
 }
@@ -59,9 +78,44 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Success 201 {object} map[string]string "Success Message"
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
-	// Mock Register
+	var req models.UserRegistration
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if username already exists
+	var existingUser models.User
+	if result := h.db.Where("username = ?", req.Username).First(&existingUser); result.Error == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username already exists"})
+		return
+	}
+
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	newUser := models.User{
+		ID:        uuid.New().String(),
+		Username:  req.Username,
+		Email:     req.Email,
+		Password:  hashedPassword,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Name:      req.FirstName + " " + req.LastName,
+		AvatarURL: "https://ui-avatars.com/api/?name=" + req.Username,
+		CreatedAt: time.Now(),
+	}
+
+	if result := h.db.Create(&newUser); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "User registered successfully (Mock)",
+		"message": "User registered successfully",
 	})
 }
 
@@ -75,9 +129,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Success 200 {object} map[string]string "New Token"
 // @Router /auth/refresh-token [post]
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	// Mock Refresh Token
+	// Simplified refresh token logic for now
 	c.JSON(http.StatusOK, gin.H{
-		"token":     "new-mock-jwt-token-" + time.Now().Format("150405"),
-		"expiresIn": 3600,
+		"message": "To be implemented with real refresh token strategy",
 	})
 }
