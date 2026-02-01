@@ -43,10 +43,53 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 		transaction.ToWalletID = nil
 	}
 
-	if result := h.db.Create(&transaction); result.Error != nil {
+	// Start database transaction
+	tx := h.db.Begin()
+
+	if result := tx.Create(&transaction); result.Error != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
+
+	// Update Wallet Balance
+	var wallet models.Wallet
+	if err := tx.First(&wallet, "id = ?", transaction.WalletID).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Wallet not found"})
+		return
+	}
+
+	if transaction.Type == "INCOME" {
+		wallet.Balance += transaction.Amount
+	} else if transaction.Type == "EXPENSE" {
+		wallet.Balance -= transaction.Amount
+	} else if transaction.Type == "TRANSFER" {
+		wallet.Balance -= transaction.Amount
+		
+		if transaction.ToWalletID != nil {
+			var toWallet models.Wallet
+			if err := tx.First(&toWallet, "id = ?", *transaction.ToWalletID).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Target wallet not found"})
+				return
+			}
+			toWallet.Balance += transaction.Amount
+			if err := tx.Save(&toWallet).Error; err != nil {
+				tx.Rollback()
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update target wallet balance"})
+				return
+			}
+		}
+	}
+
+	if err := tx.Save(&wallet).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update wallet balance"})
+		return
+	}
+
+	tx.Commit()
 
 	c.JSON(http.StatusCreated, transaction)
 }
@@ -159,10 +202,46 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 func (h *TransactionHandler) DeleteTransaction(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
-	if result := h.db.Where("id = ? AND created_by_id = ?", id, userID).Delete(&models.Transaction{}, "id = ?", id); result.Error != nil {
+	// Start DB Transaction
+	tx := h.db.Begin()
+
+	// Get transaction details first to know amount and wallets
+	var transaction models.Transaction
+	if result := tx.Where("id = ? AND created_by_id = ?", id, userID).First(&transaction); result.Error != nil {
+		tx.Rollback()
+		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		return
+	}
+
+	// Revert Wallet Balance
+	var wallet models.Wallet
+	if err := tx.First(&wallet, "id = ?", transaction.WalletID).Error; err == nil {
+		if transaction.Type == "INCOME" {
+			wallet.Balance -= transaction.Amount
+		} else if transaction.Type == "EXPENSE" {
+			wallet.Balance += transaction.Amount
+		} else if transaction.Type == "TRANSFER" {
+			wallet.Balance += transaction.Amount
+			
+			if transaction.ToWalletID != nil {
+				var toWallet models.Wallet
+				if err := tx.First(&toWallet, "id = ?", *transaction.ToWalletID).Error; err == nil {
+					toWallet.Balance -= transaction.Amount
+					tx.Save(&toWallet)
+				}
+			}
+		}
+		tx.Save(&wallet)
+	}
+
+	// Delete Transaction
+	if result := tx.Delete(&models.Transaction{}, "id = ?", id); result.Error != nil {
+		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
+
+	tx.Commit()
 
 	c.JSON(http.StatusOK, gin.H{"message": "Transaction deleted successfully"})
 }
