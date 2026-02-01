@@ -159,11 +159,6 @@ func (h *BookHandler) AddMember(c *gin.Context) {
 func (h *BookHandler) GetMembers(c *gin.Context) {
 	bookID := c.Param("id")
 
-	var members []struct {
-		models.User
-		Role string `json:"role"`
-	}
-
 	// Join User and BookMember to get Role + User details
 	// This is a bit tricky with GORM structs vs flat json
 	// Simplied: Just fetch users for now
