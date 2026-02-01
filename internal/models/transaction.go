@@ -20,7 +20,7 @@ type Transaction struct {
 	ToWallet    *Wallet         `gorm:"foreignKey:ToWalletID" json:"toWallet"`
 	Amount      float64         `json:"amount"`
 	Type        TransactionType `json:"type"`
-	CategoryID  string          `json:"categoryId"`
+	CategoryID  string          `json:"categoryId" gorm:"column:category"`
 	Category    *Category       `gorm:"foreignKey:CategoryID" json:"category"`
 	Description string          `json:"description"`
 	Date        DateOnly        `gorm:"type:date" json:"date"`
