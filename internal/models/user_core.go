@@ -6,8 +6,11 @@ import (
 
 type User struct {
 	ID        string    `gorm:"primaryKey" json:"id"`
-	Name      string    `json:"name"`
+	Username  string    `gorm:"uniqueIndex" json:"username"`
 	Email     string    `gorm:"uniqueIndex" json:"email"`
+	FirstName string    `json:"firstName"`
+	LastName  string    `json:"lastName"`
+	Name      string    `json:"name"`
 	AvatarURL string    `json:"avatarUrl"`
 	CreatedAt time.Time `json:"createdAt"`
 }

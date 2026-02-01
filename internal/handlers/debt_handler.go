@@ -26,15 +26,6 @@ func NewDebtHandler(db *gorm.DB) *DebtHandler {
 // @Param debt body models.Debt true "Debt Data"
 // @Success 201 {object} models.Debt
 // @Router /debts [post]
-// CreateDebt godoc
-// @Summary Create a new debt record
-// @Description Create a new debt (Lent or Borrowed)
-// @Tags debts
-// @Accept json
-// @Produce json
-// @Param debt body models.Debt true "Debt Data"
-// @Success 201 {object} models.Debt
-// @Router /debts [post]
 func (h *DebtHandler) CreateDebt(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	var debt models.Debt
@@ -56,20 +47,49 @@ func (h *DebtHandler) CreateDebt(c *gin.Context) {
 
 // GetDebts godoc
 // @Summary Get all debts
-// @Description Get all debts
+// @Description Get all debts (optional filter by type)
 // @Tags debts
 // @Produce json
+// @Param type query string false "Debt Type (LENT/BORROWED)"
 // @Success 200 {array} models.Debt
 // @Router /debts [get]
 func (h *DebtHandler) GetDebts(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
+	debtType := c.Query("type")
 	var debts []models.Debt
-	if result := h.db.Where("user_id = ?", userID).Find(&debts); result.Error != nil {
+
+	query := h.db.Where("user_id = ?", userID)
+	if debtType != "" {
+		query = query.Where("type = ?", debtType)
+	}
+
+	if result := query.Find(&debts); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, debts)
+}
+
+// GetDebt godoc
+// @Summary Get a debt by ID
+// @Description Get a debt by ID
+// @Tags debts
+// @Produce json
+// @Param id path string true "Debt ID"
+// @Success 200 {object} models.Debt
+// @Router /debts/{id} [get]
+func (h *DebtHandler) GetDebt(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
+	id := c.Param("id")
+	var debt models.Debt
+
+	if result := h.db.Where("id = ? AND user_id = ?", id, userID).First(&debt); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Debt not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, debt)
 }
 
 // UpdateDebt godoc

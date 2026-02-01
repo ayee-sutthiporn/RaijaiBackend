@@ -31,6 +31,10 @@ definitions:
         type: string
       type:
         $ref: '#/definitions/models.CategoryType'
+      user:
+        $ref: '#/definitions/models.User'
+      userId:
+        type: string
     type: object
   models.CategoryType:
     enum:
@@ -40,6 +44,11 @@ definitions:
     x-enum-varnames:
     - CategoryTypeIncome
     - CategoryTypeExpense
+  models.DateOnly:
+    properties:
+      time.Time:
+        type: string
+    type: object
   models.Debt:
     properties:
       autoDeduct:
@@ -47,7 +56,7 @@ definitions:
       createdAt:
         type: string
       dueDate:
-        type: string
+        $ref: '#/definitions/models.DateOnly'
       id:
         type: string
       installmentPlan:
@@ -66,6 +75,10 @@ definitions:
         type: number
       type:
         $ref: '#/definitions/models.DebtType'
+      user:
+        $ref: '#/definitions/models.User'
+      userId:
+        type: string
       wallet:
         $ref: '#/definitions/models.Wallet'
       walletId:
@@ -99,6 +112,10 @@ definitions:
         type: string
       timestamp:
         type: string
+      user:
+        $ref: '#/definitions/models.User'
+      userId:
+        type: string
     type: object
   models.InstallmentPlan:
     properties:
@@ -109,7 +126,7 @@ definitions:
       paidMonths:
         type: integer
       startDate:
-        type: string
+        $ref: '#/definitions/models.DateOnly'
       totalMonths:
         type: integer
     type: object
@@ -128,7 +145,7 @@ definitions:
       createdById:
         type: string
       date:
-        type: string
+        $ref: '#/definitions/models.DateOnly'
       description:
         type: string
       id:
@@ -205,22 +222,92 @@ info:
   title: RaiJai API
   version: "1.0"
 paths:
-  /auth/me:
-    get:
-      description: Get profile of the currently logged-in user
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with username and password
+      parameters:
+      - description: Username and Password
+        in: body
+        name: credentials
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Token
           schema:
-            $ref: '#/definitions/models.User'
-      summary: Get current user profile
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login to the system
+      tags:
+      - auth
+  /auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: Get a new access token using a refresh token
+      parameters:
+      - description: Refresh Token
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: New Token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user account
+      parameters:
+      - description: User Details
+        in: body
+        name: user
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success Message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
       tags:
       - auth
   /categories:
     get:
-      description: Get all categories
+      description: Get all categories (optional filter by type)
+      parameters:
+      - description: Category Type (INCOME/EXPENSE)
+        in: query
+        name: type
+        type: string
       produces:
       - application/json
       responses:
@@ -303,7 +390,12 @@ paths:
       - categories
   /debts:
     get:
-      description: Get all debts
+      description: Get all debts (optional filter by type)
+      parameters:
+      - description: Debt Type (LENT/BORROWED)
+        in: query
+        name: type
+        type: string
       produces:
       - application/json
       responses:
@@ -356,6 +448,24 @@ paths:
               type: string
             type: object
       summary: Delete a debt
+      tags:
+      - debts
+    get:
+      description: Get a debt by ID
+      parameters:
+      - description: Debt ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Debt'
+      summary: Get a debt by ID
       tags:
       - debts
     put:
@@ -435,13 +545,75 @@ paths:
       summary: Get history logs
       tags:
       - history
+  /reports/balance-history:
+    get:
+      description: Get history of total balance over time
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+      summary: Get balance history
+      tags:
+      - reports
+  /reports/category-pie:
+    get:
+      description: Get pie chart data for categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+      summary: Get category distribution
+      tags:
+      - reports
+  /reports/summary:
+    get:
+      description: Get summary of income and expenses
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get income/expense summary
+      tags:
+      - reports
   /transactions:
     get:
-      description: Get all transactions
+      description: Get all transactions with optional filters
       parameters:
       - description: Filter by Wallet ID
         in: query
         name: wallet_id
+        type: string
+      - description: Filter by Category ID
+        in: query
+        name: category_id
+        type: string
+      - description: Start Date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End Date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - description: Search Description
+        in: query
+        name: search
         type: string
       produces:
       - application/json
@@ -497,6 +669,24 @@ paths:
       summary: Delete a transaction
       tags:
       - transactions
+    get:
+      description: Get a transaction by ID
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Transaction'
+      summary: Get a transaction by ID
+      tags:
+      - transactions
     put:
       consumes:
       - application/json
@@ -523,6 +713,29 @@ paths:
       summary: Update a transaction
       tags:
       - transactions
+  /upload/image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload an image file (returns a mock URL)
+      parameters:
+      - description: Image File
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Image URL
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload an image
+      tags:
+      - system
   /users:
     post:
       consumes:
@@ -564,15 +777,71 @@ paths:
       summary: Get a user by ID
       tags:
       - users
+  /users/me:
+    get:
+      description: Get profile of the logged-in user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: Get current user profile
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update profile details of the logged-in user
+      parameters:
+      - description: User Details
+        in: body
+        name: user
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: Update current user profile
+      tags:
+      - users
+  /users/me/change-password:
+    post:
+      consumes:
+      - application/json
+      description: Change the password of the logged-in user
+      parameters:
+      - description: Old and New Password
+        in: body
+        name: body
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Change password
+      tags:
+      - users
   /wallets:
     get:
       description: Get all wallets specific to a user
-      parameters:
-      - description: User ID
-        in: query
-        name: user_id
-        required: true
-        type: string
       produces:
       - application/json
       responses:
@@ -588,8 +857,17 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new wallet
+      - application/json
+      description: |-
+        Create a new wallet
+        Create a new wallet
       parameters:
+      - description: Wallet Data
+        in: body
+        name: wallet
+        required: true
+        schema:
+          $ref: '#/definitions/models.Wallet'
       - description: Wallet Data
         in: body
         name: wallet
@@ -598,6 +876,7 @@ paths:
           $ref: '#/definitions/models.Wallet'
       produces:
       - application/json
+      - application/json
       responses:
         "201":
           description: Created
@@ -605,6 +884,7 @@ paths:
             $ref: '#/definitions/models.Wallet'
       summary: Create a new wallet
       tags:
+      - wallets
       - wallets
   /wallets/{id}:
     delete:
@@ -625,6 +905,24 @@ paths:
               type: string
             type: object
       summary: Delete a wallet
+      tags:
+      - wallets
+    get:
+      description: Get a wallet by ID
+      parameters:
+      - description: Wallet ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Wallet'
+      summary: Get a wallet by ID
       tags:
       - wallets
     put:

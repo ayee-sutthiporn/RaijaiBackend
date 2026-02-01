@@ -72,6 +72,27 @@ func (h *WalletHandler) GetWallets(c *gin.Context) {
 	c.JSON(http.StatusOK, wallets)
 }
 
+// GetWallet godoc
+// @Summary Get a wallet by ID
+// @Description Get a wallet by ID
+// @Tags wallets
+// @Produce json
+// @Param id path string true "Wallet ID"
+// @Success 200 {object} models.Wallet
+// @Router /wallets/{id} [get]
+func (h *WalletHandler) GetWallet(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
+	id := c.Param("id")
+	var wallet models.Wallet
+
+	if result := h.db.Where("id = ? AND owner_id = ?", id, userID).First(&wallet); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Wallet not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, wallet)
+}
+
 // UpdateWallet godoc
 // @Summary Update a wallet
 // @Description Update a wallet by ID

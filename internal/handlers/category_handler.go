@@ -26,16 +26,6 @@ func NewCategoryHandler(db *gorm.DB) *CategoryHandler {
 // @Param category body models.Category true "Category Data"
 // @Success 201 {object} models.Category
 // @Router /categories [post]
-// @Router /categories [post]
-// CreateCategory godoc
-// @Summary Create a new category
-// @Description Create a new category
-// @Tags categories
-// @Accept json
-// @Produce json
-// @Param category body models.Category true "Category Data"
-// @Success 201 {object} models.Category
-// @Router /categories [post]
 func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	var category models.Category
@@ -57,15 +47,23 @@ func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 
 // GetCategories godoc
 // @Summary Get all categories
-// @Description Get all categories
+// @Description Get all categories (optional filter by type)
 // @Tags categories
 // @Produce json
+// @Param type query string false "Category Type (INCOME/EXPENSE)"
 // @Success 200 {array} models.Category
 // @Router /categories [get]
 func (h *CategoryHandler) GetCategories(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
+	categoryType := c.Query("type")
 	var categories []models.Category
-	if result := h.db.Where("user_id = ?", userID).Find(&categories); result.Error != nil {
+
+	query := h.db.Where("user_id = ?", userID)
+	if categoryType != "" {
+		query = query.Where("type = ?", categoryType)
+	}
+
+	if result := query.Find(&categories); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}

@@ -12,59 +12,102 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"gorm.io/gorm"
 )
- 
+
 func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(db)
 	userHandler := handlers.NewUserHandler(db)
 	categoryHandler := handlers.NewCategoryHandler(db)
 	walletHandler := handlers.NewWalletHandler(db)
 	transactionHandler := handlers.NewTransactionHandler(db)
 	debtHandler := handlers.NewDebtHandler(db)
 	historyHandler := handlers.NewHistoryLogHandler(db)
- 
+	reportHandler := handlers.NewReportHandler(db)
+	systemHandler := handlers.NewSystemHandler(db)
+
 	// Swagger Route
-	// IMPORTANT: Run 'swag init -g cmd/api/main.go' to generate docs, then uncomment the import above
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
- 
+
 	api := r.Group("/api/v1")
 	{
-		// Auth Middleware Group
+		// Public Auth Routes
+		auth := api.Group("/auth")
+		{
+			auth.POST("/login", authHandler.Login)
+			auth.POST("/register", authHandler.Register)
+			auth.POST("/refresh-token", authHandler.RefreshToken)
+		}
+
+		// Protected Middleware Group
 		protected := api.Group("/")
+		// Note: AuthMiddleware now accepts 'mock-' tokens for testing
 		protected.Use(middleware.AuthMiddleware(cfg.KeycloakIssuer, cfg.KeycloakClientID, db))
 		{
-			// Auth / Profile
-			protected.GET("/auth/me", userHandler.GetMe)
+			// 1. Users
+			users := protected.Group("/users")
+			{
+				users.GET("/me", userHandler.GetMe)
+				users.PUT("/me", userHandler.UpdateMe)
+				users.POST("/me/change-password", userHandler.ChangePassword)
+				// Keep generic getters if needed by admin? Or just for compatibility
+				users.GET("/:id", userHandler.GetUser)
+			}
 
-			// Users
-			protected.POST("/users", userHandler.CreateUser)
-			protected.GET("/users/:id", userHandler.GetUser)
+			// 2. Wallets
+			wallets := protected.Group("/wallets")
+			{
+				wallets.GET("", walletHandler.GetWallets)
+				wallets.POST("", walletHandler.CreateWallet)
+				wallets.GET("/:id", walletHandler.GetWallet)
+				wallets.PUT("/:id", walletHandler.UpdateWallet)
+				wallets.DELETE("/:id", walletHandler.DeleteWallet)
+			}
 
-			// Categories
-			protected.POST("/categories", categoryHandler.CreateCategory)
-			protected.GET("/categories", categoryHandler.GetCategories)
-			protected.PUT("/categories/:id", categoryHandler.UpdateCategory)
-			protected.DELETE("/categories/:id", categoryHandler.DeleteCategory)
+			// 3. Categories
+			categories := protected.Group("/categories")
+			{
+				categories.GET("", categoryHandler.GetCategories)
+				categories.POST("", categoryHandler.CreateCategory)
+				categories.PUT("/:id", categoryHandler.UpdateCategory)
+				categories.DELETE("/:id", categoryHandler.DeleteCategory)
+			}
 
-			// Wallets
-			protected.POST("/wallets", walletHandler.CreateWallet)
-			protected.GET("/wallets", walletHandler.GetWallets)
-			protected.PUT("/wallets/:id", walletHandler.UpdateWallet)
-			protected.DELETE("/wallets/:id", walletHandler.DeleteWallet)
+			// 4. Transactions
+			transactions := protected.Group("/transactions")
+			{
+				transactions.GET("", transactionHandler.GetTransactions)
+				transactions.POST("", transactionHandler.CreateTransaction)
+				transactions.GET("/:id", transactionHandler.GetTransaction)
+				transactions.PUT("/:id", transactionHandler.UpdateTransaction)
+				transactions.DELETE("/:id", transactionHandler.DeleteTransaction)
+			}
 
-			// Transactions
-			protected.POST("/transactions", transactionHandler.CreateTransaction)
-			protected.GET("/transactions", transactionHandler.GetTransactions)
-			protected.PUT("/transactions/:id", transactionHandler.UpdateTransaction)
-			protected.DELETE("/transactions/:id", transactionHandler.DeleteTransaction)
+			// 5. Debts
+			debts := protected.Group("/debts")
+			{
+				debts.GET("", debtHandler.GetDebts)
+				debts.POST("", debtHandler.CreateDebt)
+				debts.GET("/:id", debtHandler.GetDebt)
+				debts.PUT("/:id", debtHandler.UpdateDebt)
+				debts.DELETE("/:id", debtHandler.DeleteDebt)
+				debts.POST("/:id/payment", debtHandler.MakePayment)
+			}
 
-			// Debts
-			protected.POST("/debts", debtHandler.CreateDebt)
-			protected.GET("/debts", debtHandler.GetDebts)
-			protected.PUT("/debts/:id", debtHandler.UpdateDebt)
-			protected.DELETE("/debts/:id", debtHandler.DeleteDebt)
-			protected.POST("/debts/:id/payment", debtHandler.MakePayment)
+			// 6. Reports
+			reports := protected.Group("/reports")
+			{
+				reports.GET("/summary", reportHandler.GetSummary)
+				reports.GET("/balance-history", reportHandler.GetBalanceHistory)
+				reports.GET("/category-pie", reportHandler.GetCategoryPie)
+			}
 
-			// History Logs
+			// 7. System / Mock
+			system := protected.Group("/upload")
+			{
+				system.POST("/image", systemHandler.UploadImage)
+			}
+			
+			// History (Legacy/Extra)
 			protected.GET("/history", historyHandler.GetHistoryLogs)
 		}
 	}

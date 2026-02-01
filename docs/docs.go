@@ -15,21 +15,121 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/me": {
-            "get": {
-                "description": "Get profile of the currently logged-in user",
+        "/auth/login": {
+            "post": {
+                "description": "Login with username and password",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "auth"
                 ],
-                "summary": "Get current user profile",
+                "summary": "Login to the system",
+                "parameters": [
+                    {
+                        "description": "Username and Password",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Token",
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh-token": {
+            "post": {
+                "description": "Get a new access token using a refresh token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh access token",
+                "parameters": [
+                    {
+                        "description": "Refresh Token",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "New Token",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Register a new user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register a new user",
+                "parameters": [
+                    {
+                        "description": "User Details",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Success Message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -37,7 +137,7 @@ const docTemplate = `{
         },
         "/categories": {
             "get": {
-                "description": "Get all categories",
+                "description": "Get all categories (optional filter by type)",
                 "produces": [
                     "application/json"
                 ],
@@ -45,6 +145,14 @@ const docTemplate = `{
                     "categories"
                 ],
                 "summary": "Get all categories",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category Type (INCOME/EXPENSE)",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -163,7 +271,7 @@ const docTemplate = `{
         },
         "/debts": {
             "get": {
-                "description": "Get all debts",
+                "description": "Get all debts (optional filter by type)",
                 "produces": [
                     "application/json"
                 ],
@@ -171,6 +279,14 @@ const docTemplate = `{
                     "debts"
                 ],
                 "summary": "Get all debts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Debt Type (LENT/BORROWED)",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -217,6 +333,33 @@ const docTemplate = `{
             }
         },
         "/debts/{id}": {
+            "get": {
+                "description": "Get a debt by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "debts"
+                ],
+                "summary": "Get a debt by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Debt ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Debt"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Update a debt by ID",
                 "consumes": [
@@ -365,9 +508,78 @@ const docTemplate = `{
                 }
             }
         },
+        "/reports/balance-history": {
+            "get": {
+                "description": "Get history of total balance over time",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get balance history",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/reports/category-pie": {
+            "get": {
+                "description": "Get pie chart data for categories",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get category distribution",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/reports/summary": {
+            "get": {
+                "description": "Get summary of income and expenses",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get income/expense summary",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/transactions": {
             "get": {
-                "description": "Get all transactions",
+                "description": "Get all transactions with optional filters",
                 "produces": [
                     "application/json"
                 ],
@@ -380,6 +592,30 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Filter by Wallet ID",
                         "name": "wallet_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Category ID",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start Date (YYYY-MM-DD)",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End Date (YYYY-MM-DD)",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search Description",
+                        "name": "search",
                         "in": "query"
                     }
                 ],
@@ -429,6 +665,33 @@ const docTemplate = `{
             }
         },
         "/transactions/{id}": {
+            "get": {
+                "description": "Get a transaction by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Get a transaction by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Transaction"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Update a transaction by ID",
                 "consumes": [
@@ -499,6 +762,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/upload/image": {
+            "post": {
+                "description": "Upload an image file (returns a mock URL)",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "Upload an image",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Image File",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Image URL",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "post": {
                 "description": "Create a new user",
@@ -528,6 +826,101 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me": {
+            "get": {
+                "description": "Get profile of the logged-in user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get current user profile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update profile details of the logged-in user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update current user profile",
+                "parameters": [
+                    {
+                        "description": "User Details",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/change-password": {
+            "post": {
+                "description": "Change the password of the logged-in user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Change password",
+                "parameters": [
+                    {
+                        "description": "Old and New Password",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -572,15 +965,6 @@ const docTemplate = `{
                     "wallets"
                 ],
                 "summary": "Get all wallets by User ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "user_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -594,18 +978,30 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a new wallet",
+                "description": "Create a new wallet\nCreate a new wallet",
                 "consumes": [
+                    "application/json",
                     "application/json"
                 ],
                 "produces": [
+                    "application/json",
                     "application/json"
                 ],
                 "tags": [
+                    "wallets",
                     "wallets"
                 ],
                 "summary": "Create a new wallet",
                 "parameters": [
+                    {
+                        "description": "Wallet Data",
+                        "name": "wallet",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Wallet"
+                        }
+                    },
                     {
                         "description": "Wallet Data",
                         "name": "wallet",
@@ -627,6 +1023,33 @@ const docTemplate = `{
             }
         },
         "/wallets/{id}": {
+            "get": {
+                "description": "Get a wallet by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "Get a wallet by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Wallet"
+                        }
+                    }
+                }
+            },
             "put": {
                 "description": "Update a wallet by ID",
                 "consumes": [
@@ -742,6 +1165,12 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/models.CategoryType"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "userId": {
+                    "type": "string"
                 }
             }
         },
@@ -756,6 +1185,14 @@ const docTemplate = `{
                 "CategoryTypeExpense"
             ]
         },
+        "models.DateOnly": {
+            "type": "object",
+            "properties": {
+                "time.Time": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Debt": {
             "type": "object",
             "properties": {
@@ -766,7 +1203,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "dueDate": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.DateOnly"
                 },
                 "id": {
                     "type": "string"
@@ -794,6 +1231,12 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/models.DebtType"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "userId": {
+                    "type": "string"
                 },
                 "wallet": {
                     "$ref": "#/definitions/models.Wallet"
@@ -843,6 +1286,12 @@ const docTemplate = `{
                 },
                 "timestamp": {
                     "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "userId": {
+                    "type": "string"
                 }
             }
         },
@@ -859,7 +1308,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "startDate": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.DateOnly"
                 },
                 "totalMonths": {
                     "type": "integer"
@@ -888,7 +1337,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "date": {
-                    "type": "string"
+                    "$ref": "#/definitions/models.DateOnly"
                 },
                 "description": {
                     "type": "string"

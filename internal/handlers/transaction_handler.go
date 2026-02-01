@@ -26,15 +26,6 @@ func NewTransactionHandler(db *gorm.DB) *TransactionHandler {
 // @Param transaction body models.Transaction true "Transaction Data"
 // @Success 201 {object} models.Transaction
 // @Router /transactions [post]
-// CreateTransaction godoc
-// @Summary Create a new transaction
-// @Description Create a new transaction (Income, Expense, Transfer)
-// @Tags transactions
-// @Accept json
-// @Produce json
-// @Param transaction body models.Transaction true "Transaction Data"
-// @Success 201 {object} models.Transaction
-// @Router /transactions [post]
 func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 	var transaction models.Transaction
 	if err := c.ShouldBindJSON(&transaction); err != nil {
@@ -62,20 +53,37 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 
 // GetTransactions godoc
 // @Summary Get all transactions
-// @Description Get all transactions
+// @Description Get all transactions with optional filters
 // @Tags transactions
 // @Produce json
 // @Param wallet_id query string false "Filter by Wallet ID"
+// @Param category_id query string false "Filter by Category ID"
+// @Param start_date query string false "Start Date (YYYY-MM-DD)"
+// @Param end_date query string false "End Date (YYYY-MM-DD)"
+// @Param search query string false "Search Description"
 // @Success 200 {array} models.Transaction
 // @Router /transactions [get]
 func (h *TransactionHandler) GetTransactions(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	walletID := c.Query("wallet_id")
+	categoryID := c.Query("category_id")
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
+	search := c.Query("search")
 	var transactions []models.Transaction
 
 	query := h.db.Model(&models.Transaction{}).Where("created_by_id = ?", userID)
 	if walletID != "" {
 		query = query.Where("wallet_id = ?", walletID)
+	}
+	if categoryID != "" {
+		query = query.Where("category_id = ?", categoryID)
+	}
+	if startDate != "" && endDate != "" {
+		query = query.Where("date BETWEEN ? AND ?", startDate, endDate)
+	}
+	if search != "" {
+		query = query.Where("description LIKE ?", "%"+search+"%")
 	}
 
 	if result := query.Find(&transactions); result.Error != nil {
@@ -84,6 +92,27 @@ func (h *TransactionHandler) GetTransactions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, transactions)
+}
+
+// GetTransaction godoc
+// @Summary Get a transaction by ID
+// @Description Get a transaction by ID
+// @Tags transactions
+// @Produce json
+// @Param id path string true "Transaction ID"
+// @Success 200 {object} models.Transaction
+// @Router /transactions/{id} [get]
+func (h *TransactionHandler) GetTransaction(c *gin.Context) {
+	userID := c.MustGet("user_id").(string)
+	id := c.Param("id")
+	var transaction models.Transaction
+
+	if result := h.db.Where("id = ? AND created_by_id = ?", id, userID).First(&transaction); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, transaction)
 }
 
 // UpdateTransaction godoc

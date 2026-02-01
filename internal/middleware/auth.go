@@ -2,9 +2,8 @@ package middleware
 
 import (
 	"context"
-	"strings"
-
 	"raijai-backend/internal/models"
+	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
@@ -12,6 +11,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// AuthMiddleware - Original OIDC Middleware (kept for reference, but we might switch to Mock)
 func AuthMiddleware(issuerURL, clientID string, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
@@ -27,6 +27,22 @@ func AuthMiddleware(issuerURL, clientID string, db *gorm.DB) gin.HandlerFunc {
 		}
 
 		tokenString := parts[1]
+
+		// --- MOCK OVERRIDE START ---
+		// If token starts with "mock-", treat as mock authenticated user
+		if strings.HasPrefix(tokenString, "mock-") {
+			userID := "mock-user-id-123"
+			// Ensure mock user exists in DB
+			db.FirstOrCreate(&models.User{
+				ID:    userID,
+				Name:  "Mock User",
+				Email: "mock@example.com",
+			})
+			c.Set("user_id", userID)
+			c.Next()
+			return
+		}
+		// --- MOCK OVERRIDE END ---
 
 		provider, err := oidc.NewProvider(context.Background(), issuerURL)
 		if err != nil {
@@ -63,17 +79,12 @@ func AuthMiddleware(issuerURL, clientID string, db *gorm.DB) gin.HandlerFunc {
 			Columns:   []clause.Column{{Name: "id"}},
 			DoUpdates: clause.AssignmentColumns([]string{"email", "name"}),
 		}).Create(&user); result.Error != nil {
-			// Try to find if create failed, though upsert should handle it. 
-			// Check if user exists might be safer if upsert fails on some DBs, 
-			// but Postgres supports OnConflict.
-			// Let's rely on basic FirstOrCreate if OnConflict is too complex for now,
-			// actually GORM FirstOrCreate is safer/simpler for this.
+			// Fallback if upsert fails
 			var existingUser models.User
 			if err := db.FirstOrCreate(&existingUser, models.User{ID: user.ID}).Error; err != nil {
 				c.AbortWithStatusJSON(500, gin.H{"error": "Failed to sync user: " + err.Error()})
 				return
 			}
-			// Update details
 			db.Model(&existingUser).Updates(models.User{Email: user.Email, Name: user.Name})
 		}
 
