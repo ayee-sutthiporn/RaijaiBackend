@@ -33,16 +33,28 @@ func (h *ReportHandler) GetSummary(c *gin.Context) {
 	}
 
 	// Calculate Total Income
-	h.db.Model(&models.Transaction{}).
-		Where("created_by_id = ? AND type = ?", userID, "INCOME").
-		Select("COALESCE(SUM(amount), 0)").
-		Scan(&result.Income)
+	incomeQuery := h.db.Model(&models.Transaction{}).
+		Where("created_by_id = ? AND type = ?", userID, "INCOME")
+	
+	if val := c.Query("start_date"); val != "" {
+		incomeQuery = incomeQuery.Where("date >= ?", val)
+	}
+	if val := c.Query("end_date"); val != "" {
+		incomeQuery = incomeQuery.Where("date <= ?", val)
+	}
+	incomeQuery.Select("COALESCE(SUM(amount), 0)").Scan(&result.Income)
 
 	// Calculate Total Expense
-	h.db.Model(&models.Transaction{}).
-		Where("created_by_id = ? AND type = ?", userID, "EXPENSE").
-		Select("COALESCE(SUM(amount), 0)").
-		Scan(&result.Expense)
+	expenseQuery := h.db.Model(&models.Transaction{}).
+		Where("created_by_id = ? AND type = ?", userID, "EXPENSE")
+	
+	if val := c.Query("start_date"); val != "" {
+		expenseQuery = expenseQuery.Where("date >= ?", val)
+	}
+	if val := c.Query("end_date"); val != "" {
+		expenseQuery = expenseQuery.Where("date <= ?", val)
+	}
+	expenseQuery.Select("COALESCE(SUM(amount), 0)").Scan(&result.Expense)
 
 	balance := result.Income - result.Expense
 
@@ -117,11 +129,19 @@ func (h *ReportHandler) GetCategoryPie(c *gin.Context) {
 
 	var stats []CategoryStat
 
-	err := h.db.Table("transactions").
+	query := h.db.Table("transactions").
 		Select("categories.name as category, SUM(transactions.amount) as amount, categories.color as color").
 		Joins("JOIN categories ON transactions.category = categories.id"). // Fixed column name
-		Where("transactions.created_by_id = ? AND transactions.type = ?", userID, "EXPENSE").
-		Group("categories.name, categories.color").
+		Where("transactions.created_by_id = ? AND transactions.type = ?", userID, "EXPENSE")
+
+	if val := c.Query("start_date"); val != "" {
+		query = query.Where("transactions.date >= ?", val)
+	}
+	if val := c.Query("end_date"); val != "" {
+		query = query.Where("transactions.date <= ?", val)
+	}
+
+	err := query.Group("categories.name, categories.color").
 		Scan(&stats).Error
 
 	if err != nil {
@@ -150,11 +170,28 @@ func (h *ReportHandler) GetDailyCashFlow(c *gin.Context) {
 
 	var flows []DailyFlow
 
+	groupBy := c.Query("group_by")
+	dateFormat := "YYYY-MM-DD"
+	switch groupBy {
+	case "month":
+		dateFormat = "YYYY-MM"
+	case "year":
+		dateFormat = "YYYY"
+	}
+
 	// Use TO_CHAR for safe string formatting from Date column
-	err := h.db.Table("transactions").
-		Select("TO_CHAR(date, 'YYYY-MM-DD') as date, SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income, SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as expense").
-		Where("created_by_id = ?", userID).
-		Group("date"). // Group by the actual date column
+	query := h.db.Table("transactions").
+		Select("TO_CHAR(date, '" + dateFormat + "') as date, SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income, SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as expense").
+		Where("created_by_id = ?", userID)
+
+	if val := c.Query("start_date"); val != "" {
+		query = query.Where("date >= ?", val)
+	}
+	if val := c.Query("end_date"); val != "" {
+		query = query.Where("date <= ?", val)
+	}
+
+	err := query.Group("TO_CHAR(date, '" + dateFormat + "')"). // Group by the formatted date string
 		Order("date").
 		Scan(&flows).Error
 
