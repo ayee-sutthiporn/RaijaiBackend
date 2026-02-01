@@ -86,7 +86,7 @@ func (h *TransactionHandler) GetTransactions(c *gin.Context) {
 		query = query.Where("description LIKE ?", "%"+search+"%")
 	}
 
-	if result := query.Find(&transactions); result.Error != nil {
+	if result := query.Preload("Category").Preload("Wallet").Preload("ToWallet").Find(&transactions); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
@@ -107,7 +107,7 @@ func (h *TransactionHandler) GetTransaction(c *gin.Context) {
 	id := c.Param("id")
 	var transaction models.Transaction
 
-	if result := h.db.Where("id = ? AND created_by_id = ?", id, userID).First(&transaction); result.Error != nil {
+	if result := h.db.Preload("Category").Preload("Wallet").Preload("ToWallet").Where("id = ? AND created_by_id = ?", id, userID).First(&transaction); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
 		return
 	}
