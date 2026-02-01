@@ -27,5 +27,7 @@ type Transaction struct {
 	Date        time.Time       `json:"date"`
 	CreatedByID string          `gorm:"index" json:"createdById"`
 	CreatedBy   User            `gorm:"foreignKey:CreatedByID" json:"createdBy"`
+	BookID      *string         `gorm:"index" json:"bookId"`
+	Book        *Book           `gorm:"foreignKey:BookID" json:"book"`
 	CreatedAt   time.Time       `json:"createdAt"`
 }

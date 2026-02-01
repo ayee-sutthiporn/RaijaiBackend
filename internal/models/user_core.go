@@ -42,6 +42,8 @@ type Category struct {
 	CreatedAt time.Time    `json:"createdAt"`
 	UserID    string       `gorm:"index" json:"userId"`
 	User      User         `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	BookID    *string      `gorm:"index" json:"bookId"`
+	Book      *Book        `gorm:"foreignKey:BookID" json:"book,omitempty"`
 }
 
 type WalletType string
@@ -61,5 +63,7 @@ type Wallet struct {
 	Color     string     `json:"color"`
 	OwnerID   string     `gorm:"index" json:"ownerId"`
 	Owner     User       `gorm:"foreignKey:OwnerID" json:"owner"`
+	BookID    *string    `gorm:"index" json:"bookId"`
+	Book      *Book      `gorm:"foreignKey:BookID" json:"book"`
 	CreatedAt time.Time  `json:"createdAt"`
 }

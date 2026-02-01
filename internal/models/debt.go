@@ -38,4 +38,6 @@ type Debt struct {
 	CreatedAt       time.Time        `json:"createdAt"`
 	UserID          string           `gorm:"index" json:"userId"`
 	User            User             `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	BookID          *string          `gorm:"index" json:"bookId"`
+	Book            *Book            `gorm:"foreignKey:BookID" json:"book,omitempty"`
 }

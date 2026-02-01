@@ -10,5 +10,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&Transaction{},
 		&Debt{},
 		&HistoryLog{},
+		&Book{},
+		&BookMember{},
 	)
 }

@@ -77,6 +77,22 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, newUser)
 }
 
+// GetUsers godoc
+// @Summary Get all users
+// @Description Get a list of all users
+// @Tags users
+// @Produce json
+// @Success 200 {array} models.User
+// @Router /users [get]
+func (h *UserHandler) GetUsers(c *gin.Context) {
+	var users []models.User
+	if result := h.db.Find(&users); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, users)
+}
+
 // GetUser godoc
 // @Summary Get a user by ID
 // @Description Get user details

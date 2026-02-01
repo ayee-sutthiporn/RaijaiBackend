@@ -23,7 +23,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	debtHandler := handlers.NewDebtHandler(db)
 	historyHandler := handlers.NewHistoryLogHandler(db)
 	reportHandler := handlers.NewReportHandler(db)
+	reportHandler := handlers.NewReportHandler(db)
 	systemHandler := handlers.NewSystemHandler(db)
+	bookHandler := handlers.NewBookHandler(db)
 
 	// Swagger Route
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -43,9 +45,20 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 		// Note: AuthMiddleware now accepts 'mock-' tokens for testing
 		protected.Use(middleware.AuthMiddleware(db))
 		{
+			// 0. Books
+			books := protected.Group("/books")
+			{
+				books.POST("", bookHandler.CreateBook)
+				books.GET("", bookHandler.GetBooks)
+				books.POST("/:id/members", bookHandler.AddMember)
+				books.GET("/:id/members", bookHandler.GetMembers)
+			}
+
 			// 1. Users
 			users := protected.Group("/users")
 			{
+				users.GET("", userHandler.GetUsers)
+				users.POST("", userHandler.CreateUser)
 				users.GET("/me", userHandler.GetMe)
 				users.PUT("/me", userHandler.UpdateMe)
 				users.POST("/me/change-password", userHandler.ChangePassword)
