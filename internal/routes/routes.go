@@ -23,7 +23,6 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 	debtHandler := handlers.NewDebtHandler(db)
 	historyHandler := handlers.NewHistoryLogHandler(db)
 	reportHandler := handlers.NewReportHandler(db)
-	reportHandler := handlers.NewReportHandler(db)
 	systemHandler := handlers.NewSystemHandler(db)
 	bookHandler := handlers.NewBookHandler(db)
 
