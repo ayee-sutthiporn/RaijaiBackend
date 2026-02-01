@@ -119,7 +119,7 @@ func (h *ReportHandler) GetCategoryPie(c *gin.Context) {
 
 	err := h.db.Table("transactions").
 		Select("categories.name as category, SUM(transactions.amount) as amount, categories.color as color").
-		Joins("JOIN categories ON transactions.category_id = categories.id").
+		Joins("JOIN categories ON transactions.category = categories.id"). // Fixed column name
 		Where("transactions.created_by_id = ? AND transactions.type = ?", userID, "EXPENSE").
 		Group("categories.name, categories.color").
 		Scan(&stats).Error
@@ -150,14 +150,11 @@ func (h *ReportHandler) GetDailyCashFlow(c *gin.Context) {
 
 	var flows []DailyFlow
 
-	// Get data for the current month (simplified query for now, fetching all and filtering or grouping)
-	// Ideally should filter by date range, here we'll grab all and let frontend/chart handle or limit to recent.
-	// For "current month", let's use SQL date filtering. Assuming SQLite/Postgres compatibility issue, writing generic Group By.
-	
+	// Use TO_CHAR for safe string formatting from Date column
 	err := h.db.Table("transactions").
 		Select("TO_CHAR(date, 'YYYY-MM-DD') as date, SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income, SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as expense").
 		Where("created_by_id = ?", userID).
-		Group("date").
+		Group("date"). // Group by the actual date column
 		Order("date").
 		Scan(&flows).Error
 
