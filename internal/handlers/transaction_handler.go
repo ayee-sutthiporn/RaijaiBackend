@@ -42,6 +42,11 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 	if transaction.ToWalletID != nil && *transaction.ToWalletID == "" {
 		transaction.ToWalletID = nil
 	}
+	
+	// Convert empty string pointer for BookID to nil
+	if transaction.BookID != nil && *transaction.BookID == "" {
+		transaction.BookID = nil
+	}
 
 	// Start database transaction
 	tx := h.db.Begin()
@@ -105,6 +110,7 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 // @Param start_date query string false "Start Date (YYYY-MM-DD)"
 // @Param end_date query string false "End Date (YYYY-MM-DD)"
 // @Param search query string false "Search Description"
+// @Param book_id query string false "Filter by Book ID"
 // @Success 200 {array} models.Transaction
 // @Router /transactions [get]
 func (h *TransactionHandler) GetTransactions(c *gin.Context) {
@@ -114,9 +120,16 @@ func (h *TransactionHandler) GetTransactions(c *gin.Context) {
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")
 	search := c.Query("search")
+	bookID := c.Query("book_id")
+
 	var transactions []models.Transaction
 
 	query := h.db.Model(&models.Transaction{}).Where("created_by_id = ?", userID)
+	
+	if bookID != "" {
+		query = query.Where("book_id = ?", bookID)
+	}
+	
 	if walletID != "" {
 		query = query.Where("wallet_id = ?", walletID)
 	}

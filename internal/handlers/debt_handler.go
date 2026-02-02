@@ -26,6 +26,15 @@ func NewDebtHandler(db *gorm.DB) *DebtHandler {
 // @Param debt body models.Debt true "Debt Data"
 // @Success 201 {object} models.Debt
 // @Router /debts [post]
+// CreateDebt godoc
+// @Summary Create a new debt record
+// @Description Create a new debt (Lent or Borrowed)
+// @Tags debts
+// @Accept json
+// @Produce json
+// @Param debt body models.Debt true "Debt Data"
+// @Success 201 {object} models.Debt
+// @Router /debts [post]
 func (h *DebtHandler) CreateDebt(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	var debt models.Debt
@@ -36,6 +45,11 @@ func (h *DebtHandler) CreateDebt(c *gin.Context) {
 
 	debt.ID = uuid.New().String()
 	debt.UserID = userID
+	
+	// Convert empty string pointer for BookID to nil
+	if debt.BookID != nil && *debt.BookID == "" {
+		debt.BookID = nil
+	}
 
 	if result := h.db.Create(&debt); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
@@ -51,16 +65,22 @@ func (h *DebtHandler) CreateDebt(c *gin.Context) {
 // @Tags debts
 // @Produce json
 // @Param type query string false "Debt Type (LENT/BORROWED)"
+// @Param book_id query string false "Filter by Book ID"
 // @Success 200 {array} models.Debt
 // @Router /debts [get]
 func (h *DebtHandler) GetDebts(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	debtType := c.Query("type")
+	bookID := c.Query("book_id")
 	var debts []models.Debt
 
 	query := h.db.Where("user_id = ?", userID)
 	if debtType != "" {
 		query = query.Where("type = ?", debtType)
+	}
+	
+	if bookID != "" {
+		query = query.Where("book_id = ?", bookID)
 	}
 
 	if result := query.Find(&debts); result.Error != nil {

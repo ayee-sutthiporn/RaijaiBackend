@@ -35,6 +35,15 @@ func NewWalletHandler(db *gorm.DB) *WalletHandler {
 // @Param wallet body models.Wallet true "Wallet Data"
 // @Success 201 {object} models.Wallet
 // @Router /wallets [post]
+// CreateWallet godoc
+// @Summary Create a new wallet
+// @Description Create a new wallet
+// @Tags wallets
+// @Accept json
+// @Produce json
+// @Param wallet body models.Wallet true "Wallet Data"
+// @Success 201 {object} models.Wallet
+// @Router /wallets [post]
 func (h *WalletHandler) CreateWallet(c *gin.Context) {
 	var wallet models.Wallet
 	if err := c.ShouldBindJSON(&wallet); err != nil {
@@ -44,6 +53,11 @@ func (h *WalletHandler) CreateWallet(c *gin.Context) {
 
 	wallet.ID = uuid.New().String()
 	wallet.OwnerID = c.MustGet("user_id").(string)
+	
+	// Convert empty string pointer for BookID to nil
+	if wallet.BookID != nil && *wallet.BookID == "" {
+		wallet.BookID = nil
+	}
 
 	if result := h.db.Create(&wallet); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
@@ -58,13 +72,21 @@ func (h *WalletHandler) CreateWallet(c *gin.Context) {
 // @Description Get all wallets specific to a user
 // @Tags wallets
 // @Produce json
+// @Param book_id query string false "Filter by Book ID"
 // @Success 200 {array} models.Wallet
 // @Router /wallets [get]
 func (h *WalletHandler) GetWallets(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
+	bookID := c.Query("book_id")
 	var wallets []models.Wallet
 
-	if result := h.db.Where("owner_id = ?", userID).Find(&wallets); result.Error != nil {
+	query := h.db.Where("owner_id = ?", userID)
+	
+	if bookID != "" {
+		query = query.Where("book_id = ?", bookID)
+	}
+
+	if result := query.Find(&wallets); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}

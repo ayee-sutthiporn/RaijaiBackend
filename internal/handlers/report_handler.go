@@ -42,6 +42,9 @@ func (h *ReportHandler) GetSummary(c *gin.Context) {
 	if val := c.Query("end_date"); val != "" {
 		incomeQuery = incomeQuery.Where("date <= ?", val)
 	}
+	if val := c.Query("book_id"); val != "" {
+		incomeQuery = incomeQuery.Where("book_id = ?", val)
+	}
 	incomeQuery.Select("COALESCE(SUM(amount), 0)").Scan(&result.Income)
 
 	// Calculate Total Expense
@@ -53,6 +56,9 @@ func (h *ReportHandler) GetSummary(c *gin.Context) {
 	}
 	if val := c.Query("end_date"); val != "" {
 		expenseQuery = expenseQuery.Where("date <= ?", val)
+	}
+	if val := c.Query("book_id"); val != "" {
+		expenseQuery = expenseQuery.Where("book_id = ?", val)
 	}
 	expenseQuery.Select("COALESCE(SUM(amount), 0)").Scan(&result.Expense)
 
@@ -88,10 +94,15 @@ func (h *ReportHandler) GetBalanceHistory(c *gin.Context) {
 	// For running balance, we'd need more complex SQL or post-processing.
 	// Implementing daily change for now as a baseline.
 	
-	err := h.db.Table("transactions").
+	query := h.db.Table("transactions").
 		Select("TO_CHAR(date, 'YYYY-MM-DD') as date, SUM(CASE WHEN type = 'INCOME' THEN amount WHEN type = 'EXPENSE' THEN -amount ELSE 0 END) as balance").
-		Where("created_by_id = ?", userID).
-		Group("date").
+		Where("created_by_id = ?", userID)
+
+	if val := c.Query("book_id"); val != "" {
+		query = query.Where("book_id = ?", val)
+	}
+		
+	err := query.Group("date").
 		Order("date").
 		Scan(&history).Error
 
@@ -139,6 +150,9 @@ func (h *ReportHandler) GetCategoryPie(c *gin.Context) {
 	}
 	if val := c.Query("end_date"); val != "" {
 		query = query.Where("transactions.date <= ?", val)
+	}
+	if val := c.Query("book_id"); val != "" {
+		query = query.Where("transactions.book_id = ?", val)
 	}
 
 	err := query.Group("categories.name, categories.color").
@@ -189,6 +203,9 @@ func (h *ReportHandler) GetDailyCashFlow(c *gin.Context) {
 	}
 	if val := c.Query("end_date"); val != "" {
 		query = query.Where("date <= ?", val)
+	}
+	if val := c.Query("book_id"); val != "" {
+		query = query.Where("book_id = ?", val)
 	}
 
 	err := query.Group("TO_CHAR(date, '" + dateFormat + "')"). // Group by the formatted date string
