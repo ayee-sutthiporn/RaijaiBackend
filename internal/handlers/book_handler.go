@@ -172,6 +172,33 @@ func (h *BookHandler) GetMembers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, users)
+}
+
+// DeleteBook
+// @Summary Delete a book
+// @Description Delete a book by ID (Only owner can delete)
+// @Tags books
+// @Produce json
+// @Param id path string true "Book ID"
+// @Success 200 {object} map[string]string
+// @Router /books/{id} [delete]
+func (h *BookHandler) DeleteBook(c *gin.Context) {
+	userId := c.MustGet("user_id").(string)
+	bookId := c.Param("id")
+
+	// Check if user is owner
+	var book models.Book
+	if err := h.db.Where("id = ? AND owner_id = ?", bookId, userId).First(&book).Error; err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Book not found or you are not the owner"})
+		return
+	}
+
+	// Delete Book
+	if err := h.db.Delete(&book).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Book deleted successfully"})
 }
