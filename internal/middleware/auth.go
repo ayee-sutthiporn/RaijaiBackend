@@ -31,12 +31,13 @@ func AuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Optional: Check if user exists in DB and is active
-		// var user models.User
-		// if err := db.First(&user, "id = ?", claims.UserID).Error; err != nil {
-		// 	c.AbortWithStatusJSON(401, gin.H{"error": "User not found or inactive"})
-		// 	return
-		// }
+		// Verify user still exists in DB
+		var userExists int64
+		db.Table("users").Where("id = ?", claims.UserID).Count(&userExists)
+		if userExists == 0 {
+			c.AbortWithStatusJSON(401, gin.H{"error": "User not found or inactive"})
+			return
+		}
 
 		c.Set("user_id", claims.UserID)
 		c.Next()

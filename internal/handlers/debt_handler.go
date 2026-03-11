@@ -26,15 +26,6 @@ func NewDebtHandler(db *gorm.DB) *DebtHandler {
 // @Param debt body models.Debt true "Debt Data"
 // @Success 201 {object} models.Debt
 // @Router /debts [post]
-// CreateDebt godoc
-// @Summary Create a new debt record
-// @Description Create a new debt (Lent or Borrowed)
-// @Tags debts
-// @Accept json
-// @Produce json
-// @Param debt body models.Debt true "Debt Data"
-// @Success 201 {object} models.Debt
-// @Router /debts [post]
 func (h *DebtHandler) CreateDebt(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	var debt models.Debt

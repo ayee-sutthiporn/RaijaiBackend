@@ -97,6 +97,8 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 
 	tx.Commit()
 
+	// Reload with associations for response
+	h.db.Preload("Category").Preload("Wallet").Preload("ToWallet").First(&transaction, "id = ?", transaction.ID)
 	c.JSON(http.StatusCreated, transaction)
 }
 
@@ -134,7 +136,7 @@ func (h *TransactionHandler) GetTransactions(c *gin.Context) {
 		query = query.Where("wallet_id = ?", walletID)
 	}
 	if categoryID != "" {
-		query = query.Where("category_id = ?", categoryID)
+		query = query.Where("category = ?", categoryID)
 	}
 	if startDate != "" && endDate != "" {
 		query = query.Where("date BETWEEN ? AND ?", startDate, endDate)
@@ -268,6 +270,9 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 	}
 
 	tx.Commit()
+
+	// Reload with associations for response
+	h.db.Preload("Category").Preload("Wallet").Preload("ToWallet").First(&transaction, "id = ?", transaction.ID)
 	c.JSON(http.StatusOK, transaction)
 }
 

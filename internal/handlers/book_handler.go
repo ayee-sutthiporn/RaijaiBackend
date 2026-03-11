@@ -107,7 +107,14 @@ func (h *BookHandler) GetBooks(c *gin.Context) {
 // @Router /books/{id}/members [post]
 func (h *BookHandler) AddMember(c *gin.Context) {
 	bookID := c.Param("id")
-	// TODO: verify requester permissions
+	requesterID := c.MustGet("user_id").(string)
+
+	// Verify requester is the book owner
+	var membership models.BookMember
+	if err := h.db.Where("book_id = ? AND user_id = ? AND role = ?", bookID, requesterID, "OWNER").First(&membership).Error; err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only the book owner can add members"})
+		return
+	}
 
 	var req struct {
 		Email string `json:"email" binding:"required,email"`

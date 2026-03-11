@@ -41,7 +41,6 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 
 		// Protected Middleware Group
 		protected := api.Group("/")
-		// Note: AuthMiddleware now accepts 'mock-' tokens for testing
 		protected.Use(middleware.AuthMiddleware(db))
 		{
 			// 0. Books
@@ -49,6 +48,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			{
 				books.POST("", bookHandler.CreateBook)
 				books.GET("", bookHandler.GetBooks)
+				books.DELETE("/:id", bookHandler.DeleteBook)
 				books.POST("/:id/members", bookHandler.AddMember)
 				books.GET("/:id/members", bookHandler.GetMembers)
 			}
@@ -61,7 +61,6 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 				users.GET("/me", userHandler.GetMe)
 				users.PUT("/me", userHandler.UpdateMe)
 				users.POST("/me/change-password", userHandler.ChangePassword)
-				// Keep generic getters if needed by admin? Or just for compatibility
 				users.GET("/:id", userHandler.GetUser)
 			}
 
@@ -119,7 +118,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			{
 				system.POST("/image", systemHandler.UploadImage)
 			}
-			
+
 			// History (Legacy/Extra)
 			protected.GET("/history", historyHandler.GetHistoryLogs)
 		}

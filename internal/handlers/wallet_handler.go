@@ -26,24 +26,6 @@ func NewWalletHandler(db *gorm.DB) *WalletHandler {
 // @Param wallet body models.Wallet true "Wallet Data"
 // @Success 201 {object} models.Wallet
 // @Router /wallets [post]
-// CreateWallet godoc
-// @Summary Create a new wallet
-// @Description Create a new wallet
-// @Tags wallets
-// @Accept json
-// @Produce json
-// @Param wallet body models.Wallet true "Wallet Data"
-// @Success 201 {object} models.Wallet
-// @Router /wallets [post]
-// CreateWallet godoc
-// @Summary Create a new wallet
-// @Description Create a new wallet
-// @Tags wallets
-// @Accept json
-// @Produce json
-// @Param wallet body models.Wallet true "Wallet Data"
-// @Success 201 {object} models.Wallet
-// @Router /wallets [post]
 func (h *WalletHandler) CreateWallet(c *gin.Context) {
 	var wallet models.Wallet
 	if err := c.ShouldBindJSON(&wallet); err != nil {
@@ -53,7 +35,7 @@ func (h *WalletHandler) CreateWallet(c *gin.Context) {
 
 	wallet.ID = uuid.New().String()
 	wallet.OwnerID = c.MustGet("user_id").(string)
-	
+
 	// Convert empty string pointer for BookID to nil
 	if wallet.BookID != nil && *wallet.BookID == "" {
 		wallet.BookID = nil
@@ -81,7 +63,7 @@ func (h *WalletHandler) GetWallets(c *gin.Context) {
 	var wallets []models.Wallet
 
 	query := h.db.Where("owner_id = ?", userID)
-	
+
 	if bookID != "" {
 		query = query.Where("book_id = ?", bookID)
 	}

@@ -26,15 +26,6 @@ func NewCategoryHandler(db *gorm.DB) *CategoryHandler {
 // @Param category body models.Category true "Category Data"
 // @Success 201 {object} models.Category
 // @Router /categories [post]
-// CreateCategory godoc
-// @Summary Create a new category
-// @Description Create a new category
-// @Tags categories
-// @Accept json
-// @Produce json
-// @Param category body models.Category true "Category Data"
-// @Success 201 {object} models.Category
-// @Router /categories [post]
 func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	var category models.Category

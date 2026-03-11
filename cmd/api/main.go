@@ -5,6 +5,7 @@ import (
 	"raijai-backend/internal/config"
 	"raijai-backend/internal/models"
 	"raijai-backend/internal/routes"
+	"raijai-backend/internal/utils"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,7 @@ import (
 func main() {
 	// Load configuration and connect to database
 	cfg := config.LoadConfig()
+	utils.InitJWTKey(cfg.JWTSecret)
 	db := config.ConnectDB(cfg)
 
 	// Auto Migrate Database

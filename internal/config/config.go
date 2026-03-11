@@ -16,6 +16,7 @@ type Config struct {
 	DBName           string `mapstructure:"DB_PG_RAIJAI_DB_NAME"`
 	DBPort           string `mapstructure:"PG_DB_PORT"`
 	DBSSLMode        string `mapstructure:"PG_SSL_MODE"`
+	JWTSecret        string `mapstructure:"JWT_SECRET"`
 	KeycloakIssuer   string `mapstructure:"KEYCLOAK_ISSUER"`
 	KeycloakClientID string `mapstructure:"KEYCLOAK_RAIJAI_CLIENT_ID"`
 }
@@ -35,6 +36,7 @@ func LoadConfig() *Config {
 		DBName:           viper.GetString("DB_PG_RAIJAI_DB_NAME"),
 		DBPort:           viper.GetString("PG_DB_PORT"),
 		DBSSLMode:        viper.GetString("PG_SSL_MODE"),
+		JWTSecret:        viper.GetString("JWT_SECRET"),
 		KeycloakIssuer:   viper.GetString("KEYCLOAK_ISSUER"),
 		KeycloakClientID: viper.GetString("KEYCLOAK_RAIJAI_CLIENT_ID"),
 	}

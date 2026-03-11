@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"raijai-backend/internal/models"
@@ -121,16 +122,49 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 // RefreshToken
 // @Summary Refresh access token
-// @Description Get a new access token using a refresh token
+// @Description Get a new access token using the current Bearer token (must not be expired more than 7 days)
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param body body map[string]string true "Refresh Token"
 // @Success 200 {object} map[string]string "New Token"
 // @Router /auth/refresh-token [post]
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	// Simplified refresh token logic for now
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+		return
+	}
+
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
+		return
+	}
+
+	claims, err := utils.ValidateToken(parts[1])
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+		return
+	}
+
+	// Verify the user still exists
+	var user models.User
+	if err := h.db.First(&user, "id = ?", claims.UserID).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	newToken, err := utils.GenerateToken(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	refreshToken := "mock-refresh-token-" + uuid.New().String()
+
 	c.JSON(http.StatusOK, gin.H{
-		"message": "To be implemented with real refresh token strategy",
+		"token":        newToken,
+		"refreshToken": refreshToken,
+		"expiresIn":    86400,
 	})
 }

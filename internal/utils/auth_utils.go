@@ -8,7 +8,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var jwtKey = []byte("your_secret_key") // In production, load this from config/env
+var jwtKey = []byte("your_secret_key") // overridden at startup via InitJWTKey
+
+// InitJWTKey sets the JWT signing key from configuration
+func InitJWTKey(secret string) {
+	if secret != "" {
+		jwtKey = []byte(secret)
+	}
+}
 
 type CustomClaims struct {
 	UserID string `json:"user_id"`
