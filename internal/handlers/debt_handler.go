@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"time"
+
 	"raijai-backend/internal/models"
 
 	"github.com/gin-gonic/gin"
@@ -36,10 +38,15 @@ func (h *DebtHandler) CreateDebt(c *gin.Context) {
 
 	debt.ID = uuid.New().String()
 	debt.UserID = userID
-	
+
 	// Convert empty string pointer for BookID to nil
 	if debt.BookID != nil && *debt.BookID == "" {
 		debt.BookID = nil
+	}
+
+	if debt.BookID != nil && !canEditInBook(h.db, *debt.BookID, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to add debts to this book"})
+		return
 	}
 
 	if result := h.db.Create(&debt); result.Error != nil {
@@ -65,13 +72,20 @@ func (h *DebtHandler) GetDebts(c *gin.Context) {
 	bookID := c.Query("book_id")
 	var debts []models.Debt
 
-	query := h.db.Where("user_id = ?", userID)
+	var query *gorm.DB
+	if bookID != "" {
+		if !isBookMember(h.db, bookID, userID) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You are not a member of this book"})
+			return
+		}
+		// Book members share visibility of all debts in the book, not just their own.
+		query = h.db.Where("book_id = ?", bookID)
+	} else {
+		query = h.db.Where("user_id = ?", userID)
+	}
+
 	if debtType != "" {
 		query = query.Where("type = ?", debtType)
-	}
-	
-	if bookID != "" {
-		query = query.Where("book_id = ?", bookID)
 	}
 
 	if result := query.Find(&debts); result.Error != nil {
@@ -95,7 +109,14 @@ func (h *DebtHandler) GetDebt(c *gin.Context) {
 	id := c.Param("id")
 	var debt models.Debt
 
-	if result := h.db.Where("id = ? AND user_id = ?", id, userID).First(&debt); result.Error != nil {
+	if result := h.db.First(&debt, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Debt not found"})
+		return
+	}
+
+	isOwner := debt.UserID == userID
+	isSharedMember := debt.BookID != nil && isBookMember(h.db, *debt.BookID, userID)
+	if !isOwner && !isSharedMember {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Debt not found"})
 		return
 	}
@@ -118,19 +139,27 @@ func (h *DebtHandler) UpdateDebt(c *gin.Context) {
 	id := c.Param("id")
 	var debt models.Debt
 
-	if result := h.db.Where("id = ? AND user_id = ?", id, userID).First(&debt); result.Error != nil {
+	if result := h.db.First(&debt, "id = ?", id); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Debt not found"})
 		return
 	}
 
+	isOwner := debt.UserID == userID
+	canEditViaBook := debt.BookID != nil && canEditInBook(h.db, *debt.BookID, userID)
+	if !isOwner && !canEditViaBook {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to edit this debt"})
+		return
+	}
+
+	originalUserID := debt.UserID
 	if err := c.ShouldBindJSON(&debt); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Ensure ID and UserID are not changed
+	// Ensure ID and original owner are not changed
 	debt.ID = id
-	debt.UserID = userID
+	debt.UserID = originalUserID
 
 	h.db.Save(&debt)
 	c.JSON(http.StatusOK, debt)
@@ -147,7 +176,21 @@ func (h *DebtHandler) UpdateDebt(c *gin.Context) {
 func (h *DebtHandler) DeleteDebt(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
-	if result := h.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Debt{}); result.Error != nil {
+
+	var debt models.Debt
+	if result := h.db.First(&debt, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Debt not found"})
+		return
+	}
+
+	isOwner := debt.UserID == userID
+	canEditViaBook := debt.BookID != nil && canEditInBook(h.db, *debt.BookID, userID)
+	if !isOwner && !canEditViaBook {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to delete this debt"})
+		return
+	}
+
+	if result := h.db.Delete(&models.Debt{}, "id = ?", id); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
@@ -178,9 +221,25 @@ func (h *DebtHandler) MakePayment(c *gin.Context) {
 		return
 	}
 
+	if req.Amount <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Payment amount must be positive"})
+		return
+	}
+
+	tx := h.db.Begin()
+
 	var debt models.Debt
-	if result := h.db.Where("id = ? AND user_id = ?", id, userID).First(&debt); result.Error != nil {
+	if result := tx.First(&debt, "id = ?", id); result.Error != nil {
+		tx.Rollback()
 		c.JSON(http.StatusNotFound, gin.H{"error": "Debt not found"})
+		return
+	}
+
+	isOwner := debt.UserID == userID
+	canEditViaBook := debt.BookID != nil && canEditInBook(h.db, *debt.BookID, userID)
+	if !isOwner && !canEditViaBook {
+		tx.Rollback()
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to pay this debt"})
 		return
 	}
 
@@ -194,6 +253,46 @@ func (h *DebtHandler) MakePayment(c *gin.Context) {
 		debt.InstallmentPlan.PaidMonths++
 	}
 
-	h.db.Save(&debt)
+	// Move the actual money: deduct from the linked wallet and record a transaction,
+	// mirroring how CreateTransaction affects wallet balances.
+	if debt.WalletID != nil {
+		var wallet models.Wallet
+		if err := tx.First(&wallet, "id = ?", *debt.WalletID).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Linked wallet not found"})
+			return
+		}
+		wallet.Balance -= req.Amount
+		if err := tx.Save(&wallet).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update wallet balance"})
+			return
+		}
+
+		description := "ชำระหนี้: " + debt.Title
+		payment := models.Transaction{
+			ID:          uuid.New().String(),
+			WalletID:    *debt.WalletID,
+			Amount:      req.Amount,
+			Type:        models.TransactionTypeExpense,
+			Description: description,
+			Date:        time.Now(),
+			CreatedByID: userID,
+			BookID:      debt.BookID,
+		}
+		if err := tx.Create(&payment).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to record payment transaction"})
+			return
+		}
+	}
+
+	if err := tx.Save(&debt).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update debt"})
+		return
+	}
+
+	tx.Commit()
 	c.JSON(http.StatusOK, debt)
 }

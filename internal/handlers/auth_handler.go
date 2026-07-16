@@ -122,7 +122,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 // RefreshToken
 // @Summary Refresh access token
-// @Description Get a new access token using the current Bearer token (must not be expired more than 7 days)
+// @Description Get a new access token using the current Bearer token (must still be valid/unexpired)
 // @Tags auth
 // @Accept json
 // @Produce json

@@ -56,12 +56,21 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, cfg *config.Config) {
 			// 1. Users
 			users := protected.Group("/users")
 			{
-				users.GET("", userHandler.GetUsers)
-				users.POST("", userHandler.CreateUser)
 				users.GET("/me", userHandler.GetMe)
 				users.PUT("/me", userHandler.UpdateMe)
 				users.POST("/me/change-password", userHandler.ChangePassword)
 				users.GET("/:id", userHandler.GetUser)
+
+				// User management (listing, creating, editing, deleting other accounts)
+				// is restricted to admins - it was previously open to any authenticated user.
+				admin := users.Group("")
+				admin.Use(middleware.AdminMiddleware(db))
+				{
+					admin.GET("", userHandler.GetUsers)
+					admin.POST("", userHandler.CreateUser)
+					admin.PUT("/:id", userHandler.UpdateUser)
+					admin.DELETE("/:id", userHandler.DeleteUser)
+				}
 			}
 
 			// 2. Wallets

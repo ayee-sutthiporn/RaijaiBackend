@@ -36,10 +36,15 @@ func (h *CategoryHandler) CreateCategory(c *gin.Context) {
 
 	category.ID = uuid.New().String()
 	category.UserID = userID
-	
+
 	// Convert empty string pointer for BookID to nil
 	if category.BookID != nil && *category.BookID == "" {
 		category.BookID = nil
+	}
+
+	if category.BookID != nil && !canEditInBook(h.db, *category.BookID, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to add categories to this book"})
+		return
 	}
 
 	if result := h.db.Create(&category); result.Error != nil {
@@ -65,13 +70,20 @@ func (h *CategoryHandler) GetCategories(c *gin.Context) {
 	bookID := c.Query("book_id")
 	var categories []models.Category
 
-	query := h.db.Where("user_id = ?", userID)
+	var query *gorm.DB
+	if bookID != "" {
+		if !isBookMember(h.db, bookID, userID) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You are not a member of this book"})
+			return
+		}
+		// Book members share visibility of all categories in the book, not just their own.
+		query = h.db.Where("book_id = ?", bookID)
+	} else {
+		query = h.db.Where("user_id = ?", userID)
+	}
+
 	if categoryType != "" {
 		query = query.Where("type = ?", categoryType)
-	}
-	
-	if bookID != "" {
-		query = query.Where("book_id = ?", bookID)
 	}
 
 	if result := query.Find(&categories); result.Error != nil {
@@ -97,20 +109,28 @@ func (h *CategoryHandler) UpdateCategory(c *gin.Context) {
 	id := c.Param("id")
 	var category models.Category
 
-	if result := h.db.Where("id = ? AND user_id = ?", id, userID).First(&category); result.Error != nil {
+	if result := h.db.First(&category, "id = ?", id); result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
 		return
 	}
 
+	isOwner := category.UserID == userID
+	canEditViaBook := category.BookID != nil && canEditInBook(h.db, *category.BookID, userID)
+	if !isOwner && !canEditViaBook {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to edit this category"})
+		return
+	}
+
+	originalUserID := category.UserID
 	if err := c.ShouldBindJSON(&category); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Ensure ID and UserID are not changed
+	// Ensure ID and original owner are not changed
 	category.ID = id
-	category.UserID = userID
-	
+	category.UserID = originalUserID
+
 	h.db.Save(&category)
 	c.JSON(http.StatusOK, category)
 }
@@ -126,7 +146,21 @@ func (h *CategoryHandler) UpdateCategory(c *gin.Context) {
 func (h *CategoryHandler) DeleteCategory(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 	id := c.Param("id")
-	if result := h.db.Where("id = ? AND user_id = ?", id, userID).Delete(&models.Category{}); result.Error != nil {
+
+	var category models.Category
+	if result := h.db.First(&category, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+		return
+	}
+
+	isOwner := category.UserID == userID
+	canEditViaBook := category.BookID != nil && canEditInBook(h.db, *category.BookID, userID)
+	if !isOwner && !canEditViaBook {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to delete this category"})
+		return
+	}
+
+	if result := h.db.Delete(&models.Category{}, "id = ?", id); result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}

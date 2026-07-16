@@ -189,6 +189,86 @@ func (h *UserHandler) UpdateMe(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+// UpdateUser godoc
+// @Summary Update a user (Admin)
+// @Description Update another user's profile, role, or status by ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Param user body map[string]string true "User Details"
+// @Success 200 {object} models.User
+// @Router /users/{id} [put]
+func (h *UserHandler) UpdateUser(c *gin.Context) {
+	id := c.Param("id")
+
+	var user models.User
+	if result := h.db.First(&user, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var req map[string]interface{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if name, ok := req["name"].(string); ok {
+		user.Name = name
+	}
+	if firstName, ok := req["firstName"].(string); ok {
+		user.FirstName = firstName
+	}
+	if lastName, ok := req["lastName"].(string); ok {
+		user.LastName = lastName
+	}
+	if email, ok := req["email"].(string); ok {
+		user.Email = email
+	}
+	if role, ok := req["role"].(string); ok {
+		user.Role = role
+	}
+	if status, ok := req["status"].(string); ok {
+		user.Status = status
+	}
+	if avatarURL, ok := req["avatarUrl"].(string); ok {
+		user.AvatarURL = avatarURL
+	}
+
+	if result := h.db.Save(&user); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+// DeleteUser godoc
+// @Summary Delete a user (Admin)
+// @Description Delete a user account by ID
+// @Tags users
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} map[string]string
+// @Router /users/{id} [delete]
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	callerID := c.MustGet("user_id").(string)
+	id := c.Param("id")
+
+	if id == callerID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You cannot delete your own account"})
+		return
+	}
+
+	if result := h.db.Delete(&models.User{}, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+}
+
 // ChangePassword
 // @Summary Change password
 // @Description Change the password of the logged-in user

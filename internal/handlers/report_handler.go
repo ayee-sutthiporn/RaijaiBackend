@@ -26,6 +26,12 @@ func NewReportHandler(db *gorm.DB) *ReportHandler {
 // @Router /reports/summary [get]
 func (h *ReportHandler) GetSummary(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
+	bookID := c.Query("book_id")
+
+	if bookID != "" && !isBookMember(h.db, bookID, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not a member of this book"})
+		return
+	}
 
 	var result struct {
 		Income  float64
@@ -33,32 +39,34 @@ func (h *ReportHandler) GetSummary(c *gin.Context) {
 	}
 
 	// Calculate Total Income
-	incomeQuery := h.db.Model(&models.Transaction{}).
-		Where("created_by_id = ? AND type = ?", userID, "INCOME")
-	
+	incomeQuery := h.db.Model(&models.Transaction{}).Where("type = ?", "INCOME")
+	if bookID != "" {
+		incomeQuery = incomeQuery.Where("book_id = ?", bookID)
+	} else {
+		incomeQuery = incomeQuery.Where("created_by_id = ?", userID)
+	}
+
 	if val := c.Query("start_date"); val != "" {
 		incomeQuery = incomeQuery.Where("date >= ?", val)
 	}
 	if val := c.Query("end_date"); val != "" {
 		incomeQuery = incomeQuery.Where("date <= ?", val)
 	}
-	if val := c.Query("book_id"); val != "" {
-		incomeQuery = incomeQuery.Where("book_id = ?", val)
-	}
 	incomeQuery.Select("COALESCE(SUM(amount), 0)").Scan(&result.Income)
 
 	// Calculate Total Expense
-	expenseQuery := h.db.Model(&models.Transaction{}).
-		Where("created_by_id = ? AND type = ?", userID, "EXPENSE")
-	
+	expenseQuery := h.db.Model(&models.Transaction{}).Where("type = ?", "EXPENSE")
+	if bookID != "" {
+		expenseQuery = expenseQuery.Where("book_id = ?", bookID)
+	} else {
+		expenseQuery = expenseQuery.Where("created_by_id = ?", userID)
+	}
+
 	if val := c.Query("start_date"); val != "" {
 		expenseQuery = expenseQuery.Where("date >= ?", val)
 	}
 	if val := c.Query("end_date"); val != "" {
 		expenseQuery = expenseQuery.Where("date <= ?", val)
-	}
-	if val := c.Query("book_id"); val != "" {
-		expenseQuery = expenseQuery.Where("book_id = ?", val)
 	}
 	expenseQuery.Select("COALESCE(SUM(amount), 0)").Scan(&result.Expense)
 
@@ -81,6 +89,12 @@ func (h *ReportHandler) GetSummary(c *gin.Context) {
 // @Router /reports/balance-history [get]
 func (h *ReportHandler) GetBalanceHistory(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
+	bookID := c.Query("book_id")
+
+	if bookID != "" && !isBookMember(h.db, bookID, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not a member of this book"})
+		return
+	}
 
 	type DailyBalance struct {
 		Date    string  `json:"date"`
@@ -90,18 +104,19 @@ func (h *ReportHandler) GetBalanceHistory(c *gin.Context) {
 	var history []DailyBalance
 
 	// Simple query: Group by date and sum (Income - Expense)
-	// Note: This calculates daily change, not running balance. 
+	// Note: This calculates daily change, not running balance.
 	// For running balance, we'd need more complex SQL or post-processing.
 	// Implementing daily change for now as a baseline.
-	
-	query := h.db.Table("transactions").
-		Select("TO_CHAR(date, 'YYYY-MM-DD') as date, SUM(CASE WHEN type = 'INCOME' THEN amount WHEN type = 'EXPENSE' THEN -amount ELSE 0 END) as balance").
-		Where("created_by_id = ?", userID)
 
-	if val := c.Query("book_id"); val != "" {
-		query = query.Where("book_id = ?", val)
+	query := h.db.Table("transactions").
+		Select("TO_CHAR(date, 'YYYY-MM-DD') as date, SUM(CASE WHEN type = 'INCOME' THEN amount WHEN type = 'EXPENSE' THEN -amount ELSE 0 END) as balance")
+
+	if bookID != "" {
+		query = query.Where("book_id = ?", bookID)
+	} else {
+		query = query.Where("created_by_id = ?", userID)
 	}
-		
+
 	err := query.Group("date").
 		Order("date").
 		Scan(&history).Error
@@ -131,6 +146,12 @@ func (h *ReportHandler) GetBalanceHistory(c *gin.Context) {
 // @Router /reports/category-pie [get]
 func (h *ReportHandler) GetCategoryPie(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
+	bookID := c.Query("book_id")
+
+	if bookID != "" && !isBookMember(h.db, bookID, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not a member of this book"})
+		return
+	}
 
 	type CategoryStat struct {
 		Category string  `json:"category"`
@@ -143,16 +164,19 @@ func (h *ReportHandler) GetCategoryPie(c *gin.Context) {
 	query := h.db.Table("transactions").
 		Select("categories.name as category, SUM(transactions.amount) as amount, categories.color as color").
 		Joins("JOIN categories ON transactions.category = categories.id"). // Fixed column name
-		Where("transactions.created_by_id = ? AND transactions.type = ?", userID, "EXPENSE")
+		Where("transactions.type = ?", "EXPENSE")
+
+	if bookID != "" {
+		query = query.Where("transactions.book_id = ?", bookID)
+	} else {
+		query = query.Where("transactions.created_by_id = ?", userID)
+	}
 
 	if val := c.Query("start_date"); val != "" {
 		query = query.Where("transactions.date >= ?", val)
 	}
 	if val := c.Query("end_date"); val != "" {
 		query = query.Where("transactions.date <= ?", val)
-	}
-	if val := c.Query("book_id"); val != "" {
-		query = query.Where("transactions.book_id = ?", val)
 	}
 
 	err := query.Group("categories.name, categories.color").
@@ -175,6 +199,12 @@ func (h *ReportHandler) GetCategoryPie(c *gin.Context) {
 // @Router /reports/daily-cashflow [get]
 func (h *ReportHandler) GetDailyCashFlow(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
+	bookID := c.Query("book_id")
+
+	if bookID != "" && !isBookMember(h.db, bookID, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not a member of this book"})
+		return
+	}
 
 	type DailyFlow struct {
 		Date    string  `json:"date"`
@@ -195,17 +225,19 @@ func (h *ReportHandler) GetDailyCashFlow(c *gin.Context) {
 
 	// Use TO_CHAR for safe string formatting from Date column
 	query := h.db.Table("transactions").
-		Select("TO_CHAR(date, '" + dateFormat + "') as date, SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income, SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as expense").
-		Where("created_by_id = ?", userID)
+		Select("TO_CHAR(date, '" + dateFormat + "') as date, SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as income, SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as expense")
+
+	if bookID != "" {
+		query = query.Where("book_id = ?", bookID)
+	} else {
+		query = query.Where("created_by_id = ?", userID)
+	}
 
 	if val := c.Query("start_date"); val != "" {
 		query = query.Where("date >= ?", val)
 	}
 	if val := c.Query("end_date"); val != "" {
 		query = query.Where("date <= ?", val)
-	}
-	if val := c.Query("book_id"); val != "" {
-		query = query.Where("book_id = ?", val)
 	}
 
 	err := query.Group("TO_CHAR(date, '" + dateFormat + "')"). // Group by the formatted date string

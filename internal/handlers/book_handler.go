@@ -126,6 +126,14 @@ func (h *BookHandler) AddMember(c *gin.Context) {
 		return
 	}
 
+	if req.Role == "" {
+		req.Role = "VIEWER"
+	}
+	if req.Role != "EDITOR" && req.Role != "VIEWER" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Role must be EDITOR or VIEWER"})
+		return
+	}
+
 	// Find User
 	var user models.User
 	if err := h.db.Where("email = ?", req.Email).First(&user).Error; err != nil {
@@ -143,10 +151,9 @@ func (h *BookHandler) AddMember(c *gin.Context) {
 	member := models.BookMember{
 		BookID:   bookID,
 		UserID:   user.ID,
-		Role:     req.Role, // Default to VIEWER if empty?
+		Role:     req.Role,
 		JoinedAt: time.Now(),
 	}
-	if member.Role == "" { member.Role = "EDITOR" }
 
 	if err := h.db.Create(&member).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -156,30 +163,43 @@ func (h *BookHandler) AddMember(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Member added successfully"})
 }
 
+type BookMemberResponse struct {
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	Name      string `json:"name"`
+	AvatarURL string `json:"avatarUrl"`
+	Role      string `json:"role"` // OWNER, EDITOR, VIEWER (role within the book, not the system role)
+}
+
 // GetMembers
 // @Summary Get book members
-// @Description List all members of a book
+// @Description List all members of a book, including their role within that book
 // @Tags books
 // @Produce json
-// @Success 200 {array} models.User
+// @Success 200 {array} handlers.BookMemberResponse
 // @Router /books/{id}/members [get]
 func (h *BookHandler) GetMembers(c *gin.Context) {
 	bookID := c.Param("id")
+	requesterID := c.MustGet("user_id").(string)
 
-	// Join User and BookMember to get Role + User details
-	// This is a bit tricky with GORM structs vs flat json
-	// Simplied: Just fetch users for now
-	var users []models.User
+	if !isBookMember(h.db, bookID, requesterID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not a member of this book"})
+		return
+	}
+
+	var members []BookMemberResponse
 	err := h.db.Table("users").
+		Select("users.id, users.username, users.email, users.name, users.avatar_url as avatar_url, book_members.role as role").
 		Joins("JOIN book_members on book_members.user_id = users.id").
 		Where("book_members.book_id = ?", bookID).
-		Scan(&users).Error
+		Scan(&members).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, users)
+	c.JSON(http.StatusOK, members)
 }
 
 // DeleteBook
@@ -201,8 +221,29 @@ func (h *BookHandler) DeleteBook(c *gin.Context) {
 		return
 	}
 
-	// Delete Book
-	if err := h.db.Delete(&book).Error; err != nil {
+	// Delete the book, its memberships, and detach (not destroy) any wallets,
+	// categories, transactions, and debts that pointed at it - otherwise they'd
+	// be left with a dangling book_id.
+	err := h.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.Wallet{}).Where("book_id = ?", bookId).Update("book_id", nil).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.Category{}).Where("book_id = ?", bookId).Update("book_id", nil).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.Transaction{}).Where("book_id = ?", bookId).Update("book_id", nil).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&models.Debt{}).Where("book_id = ?", bookId).Update("book_id", nil).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("book_id = ?", bookId).Delete(&models.BookMember{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&book).Error
+	})
+
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

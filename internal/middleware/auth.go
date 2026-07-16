@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"raijai-backend/internal/models"
 	"raijai-backend/internal/utils"
 	"strings"
 
@@ -40,6 +41,22 @@ func AuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		c.Set("user_id", claims.UserID)
+		c.Next()
+	}
+}
+
+// AdminMiddleware restricts access to users with Role == "ADMIN".
+// Must run after AuthMiddleware so "user_id" is already set in the context.
+func AdminMiddleware(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID := c.MustGet("user_id").(string)
+
+		var user models.User
+		if err := db.First(&user, "id = ?", userID).Error; err != nil || user.Role != "ADMIN" {
+			c.AbortWithStatusJSON(403, gin.H{"error": "Admin privileges required"})
+			return
+		}
+
 		c.Next()
 	}
 }

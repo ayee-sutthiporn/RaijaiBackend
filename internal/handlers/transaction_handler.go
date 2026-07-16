@@ -36,16 +36,23 @@ func (h *TransactionHandler) CreateTransaction(c *gin.Context) {
 	transaction.ID = uuid.New().String()
 
 	// Set CreatedByID from context
-	transaction.CreatedByID = c.MustGet("user_id").(string)
+	userID := c.MustGet("user_id").(string)
+	transaction.CreatedByID = userID
 
-	// Convert empty string pointer to nil to avoid FK constraint violation
+	// Convert empty string pointers to nil to avoid FK constraint violations
 	if transaction.ToWalletID != nil && *transaction.ToWalletID == "" {
 		transaction.ToWalletID = nil
 	}
-	
-	// Convert empty string pointer for BookID to nil
+	if transaction.CategoryID != nil && *transaction.CategoryID == "" {
+		transaction.CategoryID = nil
+	}
 	if transaction.BookID != nil && *transaction.BookID == "" {
 		transaction.BookID = nil
+	}
+
+	if transaction.BookID != nil && !canEditInBook(h.db, *transaction.BookID, userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to add transactions to this book"})
+		return
 	}
 
 	// Start database transaction
@@ -126,12 +133,18 @@ func (h *TransactionHandler) GetTransactions(c *gin.Context) {
 
 	var transactions []models.Transaction
 
-	query := h.db.Model(&models.Transaction{}).Where("created_by_id = ?", userID)
-	
+	var query *gorm.DB
 	if bookID != "" {
-		query = query.Where("book_id = ?", bookID)
+		if !isBookMember(h.db, bookID, userID) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You are not a member of this book"})
+			return
+		}
+		// Book members share visibility of all transactions in the book, not just their own.
+		query = h.db.Model(&models.Transaction{}).Where("book_id = ?", bookID)
+	} else {
+		query = h.db.Model(&models.Transaction{}).Where("created_by_id = ?", userID)
 	}
-	
+
 	if walletID != "" {
 		query = query.Where("wallet_id = ?", walletID)
 	}
@@ -166,7 +179,14 @@ func (h *TransactionHandler) GetTransaction(c *gin.Context) {
 	id := c.Param("id")
 	var transaction models.Transaction
 
-	if result := h.db.Preload("Category").Preload("Wallet").Preload("ToWallet").Where("id = ? AND created_by_id = ?", id, userID).First(&transaction); result.Error != nil {
+	if result := h.db.Preload("Category").Preload("Wallet").Preload("ToWallet").First(&transaction, "id = ?", id); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		return
+	}
+
+	isOwner := transaction.CreatedByID == userID
+	isSharedMember := transaction.BookID != nil && isBookMember(h.db, *transaction.BookID, userID)
+	if !isOwner && !isSharedMember {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
 		return
 	}
@@ -193,9 +213,17 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 	tx := h.db.Begin()
 
 	var existingTransaction models.Transaction
-	if result := tx.Where("id = ? AND created_by_id = ?", id, userID).First(&existingTransaction); result.Error != nil {
+	if result := tx.First(&existingTransaction, "id = ?", id); result.Error != nil {
 		tx.Rollback()
 		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		return
+	}
+
+	isOwner := existingTransaction.CreatedByID == userID
+	canEditViaBook := existingTransaction.BookID != nil && canEditInBook(h.db, *existingTransaction.BookID, userID)
+	if !isOwner && !canEditViaBook {
+		tx.Rollback()
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to edit this transaction"})
 		return
 	}
 
@@ -227,11 +255,17 @@ func (h *TransactionHandler) UpdateTransaction(c *gin.Context) {
 		return
 	}
 	transaction.ID = id
-	transaction.CreatedByID = userID
+	transaction.CreatedByID = existingTransaction.CreatedByID
 
-	// Convert empty string pointer to nil for ToWalletID
+	// Convert empty string pointers to nil for FK fields
 	if transaction.ToWalletID != nil && *transaction.ToWalletID == "" {
 		transaction.ToWalletID = nil
+	}
+	if transaction.CategoryID != nil && *transaction.CategoryID == "" {
+		transaction.CategoryID = nil
+	}
+	if transaction.BookID != nil && *transaction.BookID == "" {
+		transaction.BookID = nil
 	}
 
 	// 3. Apply impact of new transaction
@@ -292,9 +326,17 @@ func (h *TransactionHandler) DeleteTransaction(c *gin.Context) {
 
 	// Get transaction details first to know amount and wallets
 	var transaction models.Transaction
-	if result := tx.Where("id = ? AND created_by_id = ?", id, userID).First(&transaction); result.Error != nil {
+	if result := tx.First(&transaction, "id = ?", id); result.Error != nil {
 		tx.Rollback()
 		c.JSON(http.StatusNotFound, gin.H{"error": "Transaction not found"})
+		return
+	}
+
+	isOwner := transaction.CreatedByID == userID
+	canEditViaBook := transaction.BookID != nil && canEditInBook(h.db, *transaction.BookID, userID)
+	if !isOwner && !canEditViaBook {
+		tx.Rollback()
+		c.JSON(http.StatusForbidden, gin.H{"error": "You do not have permission to delete this transaction"})
 		return
 	}
 
