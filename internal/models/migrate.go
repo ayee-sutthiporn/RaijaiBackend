@@ -12,5 +12,6 @@ func AutoMigrate(db *gorm.DB) error {
 		&HistoryLog{},
 		&Book{},
 		&BookMember{},
+		&PasswordResetToken{},
 	)
 }

@@ -168,3 +168,121 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		"expiresIn":    86400,
 	})
 }
+
+// ForgotPassword
+// @Summary Request a password reset token
+// @Description Generates a single-use password reset token for the given email.
+// @Description DEV MODE: no email is sent — the raw token is returned directly
+// @Description in the JSON response so the frontend can build the reset link.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body map[string]string true "Email"
+// @Success 200 {object} map[string]string "message, and resetToken when the account exists"
+// @Router /auth/forgot-password [post]
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.User
+	if result := h.db.Where("email = ?", req.Email).First(&user); result.Error != nil {
+		// TODO: once real email sending is added, this branch and the
+		// success branch below must return an identical response (no
+		// resetToken ever in the body) so account existence isn't leaked.
+		c.JSON(http.StatusOK, gin.H{
+			"message": "If this email is registered, a password reset token has been generated.",
+		})
+		return
+	}
+
+	h.db.Model(&models.PasswordResetToken{}).
+		Where("user_id = ? AND used = ?", user.ID, false).
+		Update("used", true)
+
+	rawToken, err := utils.GenerateResetToken()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate reset token"})
+		return
+	}
+
+	resetToken := models.PasswordResetToken{
+		ID:        uuid.New().String(),
+		UserID:    user.ID,
+		TokenHash: utils.HashToken(rawToken),
+		ExpiresAt: time.Now().Add(30 * time.Minute),
+		CreatedAt: time.Now(),
+	}
+
+	if result := h.db.Create(&resetToken); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create reset token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "Password reset token generated (dev mode – no email is sent).",
+		"resetToken": rawToken,
+	})
+}
+
+// ResetPassword
+// @Summary Reset password using a reset token
+// @Description Consumes a password reset token (returned by /auth/forgot-password
+// @Description in dev mode) to set a new password. Single-use; expires after 30 minutes.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param body body map[string]string true "Token and NewPassword"
+// @Success 200 {object} map[string]string
+// @Router /auth/reset-password [post]
+func (h *AuthHandler) ResetPassword(c *gin.Context) {
+	var req struct {
+		Token       string `json:"token" binding:"required"`
+		NewPassword string `json:"newPassword" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	tokenHash := utils.HashToken(req.Token)
+
+	var resetToken models.PasswordResetToken
+	if result := h.db.Where("token_hash = ? AND used = ?", tokenHash, false).First(&resetToken); result.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired reset token"})
+		return
+	}
+
+	if time.Now().After(resetToken.ExpiresAt) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired reset token"})
+		return
+	}
+
+	var user models.User
+	if result := h.db.First(&user, "id = ?", resetToken.UserID); result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash new password"})
+		return
+	}
+
+	user.Password = hashedPassword
+	if result := h.db.Save(&user); result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	h.db.Model(&models.PasswordResetToken{}).
+		Where("user_id = ? AND used = ?", user.ID, false).
+		Update("used", true)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password has been reset successfully"})
+}

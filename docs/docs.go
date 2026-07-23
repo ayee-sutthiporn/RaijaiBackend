@@ -15,6 +15,46 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/forgot-password": {
+            "post": {
+                "description": "Generates a single-use password reset token for the given email.\nDEV MODE: no email is sent — the raw token is returned directly\nin the JSON response so the frontend can build the reset link.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Request a password reset token",
+                "parameters": [
+                    {
+                        "description": "Email",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "message, and resetToken when the account exists",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Login with username and password",
@@ -57,7 +97,7 @@ const docTemplate = `{
         },
         "/auth/refresh-token": {
             "post": {
-                "description": "Get a new access token using a refresh token",
+                "description": "Get a new access token using the current Bearer token (must still be valid/unexpired)",
                 "consumes": [
                     "application/json"
                 ],
@@ -68,20 +108,6 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Refresh access token",
-                "parameters": [
-                    {
-                        "description": "Refresh Token",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "New Token",
@@ -135,6 +161,166 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/reset-password": {
+            "post": {
+                "description": "Consumes a password reset token (returned by /auth/forgot-password\nin dev mode) to set a new password. Single-use; expires after 30 minutes.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Reset password using a reset token",
+                "parameters": [
+                    {
+                        "description": "Token and NewPassword",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/books": {
+            "get": {
+                "description": "List all books the user is a member of",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Get user's books",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Book"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new ledger book",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Create a new book",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Book"
+                        }
+                    }
+                }
+            }
+        },
+        "/books/{id}": {
+            "delete": {
+                "description": "Delete a book by ID (Only owner can delete)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Delete a book",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Book ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/books/{id}/members": {
+            "get": {
+                "description": "List all members of a book, including their role within that book",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Get book members",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.BookMemberResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a user to a book using email",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Add member to book",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/categories": {
             "get": {
                 "description": "Get all categories (optional filter by type)",
@@ -150,6 +336,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Category Type (INCOME/EXPENSE)",
                         "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Book ID",
+                        "name": "book_id",
                         "in": "query"
                     }
                 ],
@@ -284,6 +476,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Debt Type (LENT/BORROWED)",
                         "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Book ID",
+                        "name": "book_id",
                         "in": "query"
                     }
                 ],
@@ -556,6 +754,30 @@ const docTemplate = `{
                 }
             }
         },
+        "/reports/daily-cashflow": {
+            "get": {
+                "description": "Get daily income and expense statistics for the current month",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "reports"
+                ],
+                "summary": "Get daily income and expense",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/reports/summary": {
             "get": {
                 "description": "Get summary of income and expenses",
@@ -616,6 +838,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Search Description",
                         "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Book ID",
+                        "name": "book_id",
                         "in": "query"
                     }
                 ],
@@ -798,6 +1026,27 @@ const docTemplate = `{
             }
         },
         "/users": {
+            "get": {
+                "description": "Get a list of all users",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get all users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.User"
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Create a new user",
                 "consumes": [
@@ -953,6 +1202,78 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "put": {
+                "description": "Update another user's profile, role, or status by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update a user (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User Details",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a user account by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete a user (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/wallets": {
@@ -965,6 +1286,14 @@ const docTemplate = `{
                     "wallets"
                 ],
                 "summary": "Get all wallets by User ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by Book ID",
+                        "name": "book_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -978,30 +1307,18 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Create a new wallet\nCreate a new wallet",
+                "description": "Create a new wallet",
                 "consumes": [
-                    "application/json",
                     "application/json"
                 ],
                 "produces": [
-                    "application/json",
                     "application/json"
                 ],
                 "tags": [
-                    "wallets",
                     "wallets"
                 ],
                 "summary": "Create a new wallet",
                 "parameters": [
-                    {
-                        "description": "Wallet Data",
-                        "name": "wallet",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Wallet"
-                        }
-                    },
                     {
                         "description": "Wallet Data",
                         "name": "wallet",
@@ -1122,6 +1439,30 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.BookMemberResponse": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "description": "OWNER, EDITOR, VIEWER (role within the book, not the system role)",
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.PaymentRequest": {
             "type": "object",
             "properties": {
@@ -1145,9 +1486,41 @@ const docTemplate = `{
                 "ActionPayment"
             ]
         },
+        "models.Book": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "ownerId": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "models.Category": {
             "type": "object",
             "properties": {
+                "book": {
+                    "$ref": "#/definitions/models.Book"
+                },
+                "bookId": {
+                    "type": "string"
+                },
                 "color": {
                     "type": "string"
                 },
@@ -1198,6 +1571,12 @@ const docTemplate = `{
             "properties": {
                 "autoDeduct": {
                     "type": "boolean"
+                },
+                "book": {
+                    "$ref": "#/definitions/models.Book"
+                },
+                "bookId": {
+                    "type": "string"
                 },
                 "createdAt": {
                     "type": "string"
@@ -1321,6 +1700,12 @@ const docTemplate = `{
                 "amount": {
                     "type": "number"
                 },
+                "book": {
+                    "$ref": "#/definitions/models.Book"
+                },
+                "bookId": {
+                    "type": "string"
+                },
                 "category": {
                     "$ref": "#/definitions/models.Category"
                 },
@@ -1337,12 +1722,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "date": {
-                    "$ref": "#/definitions/models.DateOnly"
+                    "type": "string"
                 },
                 "description": {
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "imageUrl": {
                     "type": "string"
                 },
                 "toWallet": {
@@ -1387,10 +1775,27 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
+                "firstName": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
+                "lastName": {
+                    "type": "string"
+                },
                 "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "description": "ADMIN, USER",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "ACTIVE, INACTIVE",
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
@@ -1400,6 +1805,12 @@ const docTemplate = `{
             "properties": {
                 "balance": {
                     "type": "number"
+                },
+                "book": {
+                    "$ref": "#/definitions/models.Book"
+                },
+                "bookId": {
+                    "type": "string"
                 },
                 "color": {
                     "type": "string"
